@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { Search, FileText, Download, Eye, Loader2 } from "lucide-react";
+import { Search, FileText, Download, Eye, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -31,10 +31,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface ResultadoExercicio {
+  exercicio: number;
+  irpfRestituir: number;
+  rendimentosTributaveis: number;
+  irRetido: number;
+  meses: number;
+}
+
 export default function Historico() {
   const [search, setSearch] = useState("");
   const [selectedForm, setSelectedForm] = useState<number | null>(null);
-  const [downloadingPdf, setDownloadingPdf] = useState<{ formId: number; type: string } | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<{ formId: number; type: string; exercicio?: number } | null>(null);
 
   const { data: forms, isLoading } = trpc.irpf.list.useQuery({
     search: search || undefined,
@@ -48,22 +56,7 @@ export default function Historico() {
   // Mutations para gerar PDFs
   const esclarecimentosMutation = trpc.pdf.esclarecimentos.useMutation({
     onSuccess: (data) => {
-      // Converter base64 para blob e fazer download
-      const byteCharacters = atob(data.pdf);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = data.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-      
+      downloadPdfFromBase64(data.pdf, data.filename);
       toast.success("PDF de Esclarecimentos baixado com sucesso!");
       setDownloadingPdf(null);
     },
@@ -75,22 +68,7 @@ export default function Historico() {
 
   const planilhaRTMutation = trpc.pdf.planilhaRT.useMutation({
     onSuccess: (data) => {
-      // Converter base64 para blob e fazer download
-      const byteCharacters = atob(data.pdf);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = data.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-      
+      downloadPdfFromBase64(data.pdf, data.filename);
       toast.success("PDF de Planilha RT baixado com sucesso!");
       setDownloadingPdf(null);
     },
@@ -100,14 +78,35 @@ export default function Historico() {
     },
   });
 
-  const handleDownloadEsclarecimentos = (formId: number) => {
-    setDownloadingPdf({ formId, type: 'esclarecimentos' });
-    esclarecimentosMutation.mutate({ formId });
+  const downloadPdfFromBase64 = (base64: string, filename: string) => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const handleDownloadPlanilhaRT = (formId: number) => {
-    setDownloadingPdf({ formId, type: 'planilhaRT' });
-    planilhaRTMutation.mutate({ formId });
+  const handleDownloadEsclarecimentos = (formId: number, exercicio?: number) => {
+    setDownloadingPdf({ formId, type: 'esclarecimentos', exercicio });
+    esclarecimentosMutation.mutate({ formId, exercicio });
+  };
+
+  const handleDownloadPlanilhaRT = (formId: number, exercicio?: number) => {
+    setDownloadingPdf({ formId, type: 'planilhaRT', exercicio });
+    planilhaRTMutation.mutate({ formId, exercicio });
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const formatCurrency = (value: number) => {
@@ -131,6 +130,29 @@ export default function Historico() {
     const config = variants[status] || { variant: "outline" as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  // Extrair exercícios do formDetails
+  const getExercicios = (): number[] => {
+    if (!formDetails?.resultadosPorExercicio) {
+      // Se não há múltiplos exercícios, usa o exercício padrão
+      const exercicioDefault = formDetails?.alvaraData 
+        ? new Date(formDetails.alvaraData).getFullYear() + 1 
+        : new Date().getFullYear();
+      return [exercicioDefault];
+    }
+    try {
+      const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+      return resultados.map(r => r.exercicio).sort((a, b) => a - b);
+    } catch {
+      const exercicioDefault = formDetails?.alvaraData 
+        ? new Date(formDetails.alvaraData).getFullYear() + 1 
+        : new Date().getFullYear();
+      return [exercicioDefault];
+    }
+  };
+
+  const exercicios = formDetails ? getExercicios() : [];
+  const isMultipleExercicios = exercicios.length > 1;
 
   return (
     <DashboardLayout>
@@ -269,19 +291,33 @@ export default function Historico() {
 
         {/* Modal de Detalhes */}
         <Dialog open={!!selectedForm} onOpenChange={() => setSelectedForm(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Cálculo</DialogTitle>
-              <DialogDescription>
-                Informações completas do cálculo de restituição
-              </DialogDescription>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
+            <DialogHeader className="print:mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle>Detalhes do Cálculo</DialogTitle>
+                  <DialogDescription>
+                    Informações completas do cálculo de restituição
+                  </DialogDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="print:hidden"
+                  title="Imprimir"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Imprimir
+                </Button>
+              </div>
             </DialogHeader>
             {detailsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-green-600" />
               </div>
             ) : formDetails ? (
-              <div className="space-y-6">
+              <div className="space-y-6" id="print-content">
                 {/* Dados Pessoais */}
                 <div>
                   <h3 className="font-semibold text-sm text-muted-foreground mb-2">DADOS PESSOAIS</h3>
@@ -388,34 +424,112 @@ export default function Historico() {
                   </div>
                 </div>
 
+                {/* Resultados por Exercício (se múltiplos) */}
+                {isMultipleExercicios && formDetails.resultadosPorExercicio && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-sm text-blue-700 mb-3">RESULTADOS POR EXERCÍCIO</h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        try {
+                          const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+                          return resultados.map((r) => (
+                            <div key={r.exercicio} className="flex justify-between items-center text-sm bg-white p-2 rounded">
+                              <span className="font-medium">DIRPF {r.exercicio}</span>
+                              <span className={r.irpfRestituir >= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                                {formatCurrency(r.irpfRestituir)}
+                              </span>
+                            </div>
+                          ));
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                )}
+
                 {/* Botões de Download no Modal */}
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => handleDownloadEsclarecimentos(formDetails.id)}
-                    disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos'}
-                  >
-                    {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos' ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4 mr-2" />
-                    )}
-                    Esclarecimentos
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => handleDownloadPlanilhaRT(formDetails.id)}
-                    disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT'}
-                  >
-                    {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT' ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4 mr-2" />
-                    )}
-                    Planilha RT
-                  </Button>
+                <div className="pt-4 border-t print:hidden">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">BAIXAR DOCUMENTOS</h3>
+                  
+                  {isMultipleExercicios ? (
+                    <div className="space-y-4">
+                      {/* Esclarecimentos por exercício */}
+                      <div>
+                        <p className="text-sm font-medium mb-2">Esclarecimentos</p>
+                        <div className="flex flex-wrap gap-2">
+                          {exercicios.map((exercicio) => (
+                            <Button
+                              key={`esc-${exercicio}`}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadEsclarecimentos(formDetails.id, exercicio)}
+                              disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos' && downloadingPdf?.exercicio === exercicio}
+                            >
+                              {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos' && downloadingPdf?.exercicio === exercicio ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4 mr-1" />
+                              )}
+                              {exercicio}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Planilha RT por exercício */}
+                      <div>
+                        <p className="text-sm font-medium mb-2">Planilha RT</p>
+                        <div className="flex flex-wrap gap-2">
+                          {exercicios.map((exercicio) => (
+                            <Button
+                              key={`rt-${exercicio}`}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadPlanilhaRT(formDetails.id, exercicio)}
+                              disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT' && downloadingPdf?.exercicio === exercicio}
+                            >
+                              {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT' && downloadingPdf?.exercicio === exercicio ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4 mr-1" />
+                              )}
+                              {exercicio}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleDownloadEsclarecimentos(formDetails.id)}
+                        disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos'}
+                      >
+                        {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4 mr-2" />
+                        )}
+                        Esclarecimentos
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleDownloadPlanilhaRT(formDetails.id)}
+                        disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT'}
+                      >
+                        {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4 mr-2" />
+                        )}
+                        Planilha RT
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status */}
@@ -434,6 +548,28 @@ export default function Historico() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Estilos para impressão */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #print-content, #print-content * {
+            visibility: visible;
+          }
+          #print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
     </DashboardLayout>
   );
 }

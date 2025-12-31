@@ -81,3 +81,9 @@
 
 - [x] Corrigir cor do cabeçalho do PDF Planilha RT (preto → cinza)
 - [x] Gerar PDFs para todos os exercícios em casos de múltiplos anos (Ana Carmen: 2022, 2023, 2025)
+
+## Melhorias na Janela de Detalhes (31/12/2024)
+
+- [x] Adicionar botão de imprimir na janela de detalhes
+- [x] Mostrar downloads individuais por exercício para casos de múltiplos anos
+- [x] Agrupar Esclarecimentos e Planilha RT separadamente no modal
