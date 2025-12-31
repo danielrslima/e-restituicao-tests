@@ -157,3 +157,23 @@
   - Cabeçalho com logotipo e título
   - Bordas e estrutura visual
   - Rodapé com informações
+
+
+## Pendências para Próxima Sessão (01/01/2025)
+
+### Correções Urgentes
+- [ ] Corrigir página de impressão - Conteúdo está iniciando no meio da folha A4
+- [ ] Corrigir impressão para mostrar todas as seções (Resultados por Exercício não está aparecendo)
+
+### Integrações (conforme instruções do projeto)
+- [ ] Agendamento de emails - Sistema de envio automático 7 dias após pagamento
+- [ ] Gestão de Kit IR - Segundo pagamento
+- [ ] Relatório consolidado de múltiplos clientes
+
+### Deploy no Servidor Hostinger
+- [ ] Preparar build de produção do dashboard
+- [ ] Configurar variáveis de ambiente no Hostinger
+- [ ] Fazer upload dos arquivos para o servidor
+- [ ] Configurar domínio/subdomínio para o dashboard
+- [ ] Testar integração completa site → dashboard
+

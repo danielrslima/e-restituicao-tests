@@ -501,14 +501,11 @@ export default function Historico() {
             ) : formDetails ? (
               <div className="space-y-6" id="print-content">
                 {/* Cabeçalho para Impressão */}
-                <div className="hidden print:block print:mb-6">
-                  <div className="flex items-center justify-between border-b-2 border-green-600 pb-4 mb-4">
+                <div className="hidden print:block print:mb-3">
+                  <div className="flex items-center justify-between border-b-2 border-green-600 pb-2 mb-2">
                     <div className="flex items-center gap-3">
-                      <img src="/logotipo-e-restituicaoIR.png" alt="e-Restituição" className="h-12" />
-                      <div>
-                        <h1 className="text-xl font-bold text-green-700">e-Restituição IRPF</h1>
-                        <p className="text-sm text-gray-500">Relatório de Cálculo de Restituição</p>
-                      </div>
+                      <img src="/logotipo-e-restituicaoIR.png" alt="e-Restituição" className="h-16" />
+                      <p className="text-sm text-gray-500">Relatório de Cálculo de Restituição</p>
                     </div>
                     <div className="text-right text-sm text-gray-500">
                       <p>Data: {new Date().toLocaleDateString('pt-BR')}</p>
@@ -1034,9 +1031,11 @@ export default function Historico() {
         @media print {
           @page {
             size: A4;
-            margin: 15mm 20mm;
+            margin: 0;
           }
-          body {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -1047,11 +1046,12 @@ export default function Historico() {
             visibility: visible;
           }
           #print-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 20mm;
+            position: fixed;
+            left: 10mm;
+            top: 10mm;
+            right: 10mm;
+            width: auto;
+            padding: 0;
             font-size: 10pt;
             line-height: 1.4;
           }
