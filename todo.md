@@ -142,3 +142,18 @@
 - [x] Corrigir envio dos arrays de alvarás (valueData.alvaraUm → alvaraUm)
 - [x] Corrigir envio dos arrays de DARFs (valueData.darfUm → darfUm)
 - [x] Corrigir envio dos arrays de honorários (valorCalculos.honorariosUm → honorariosUm)
+
+
+## Novas Funcionalidades (31/12/2024 - Sessão 2)
+
+- [x] Interface de edição de dados de cálculos existentes
+- [x] Interface de exclusão de cálculos com confirmação
+- [x] Gestão de usuários (inclusão/listagem de usuários)
+- [x] Controle de permissões (definir quem pode editar/excluir)
+  - Admin: pode editar E excluir
+  - Usuário com canEdit: pode editar, mas NÃO pode excluir
+  - Usuário comum: só visualiza
+- [x] Ajustar página de impressão para formato A4
+  - Cabeçalho com logotipo e título
+  - Bordas e estrutura visual
+  - Rodapé com informações

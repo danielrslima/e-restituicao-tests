@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useState } from "react";
-import { Search, FileText, Download, Eye, Loader2, Printer } from "lucide-react";
+import { Search, FileText, Download, Eye, Loader2, Printer, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -13,7 +15,18 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -30,6 +43,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ResultadoExercicio {
   exercicio: number;
@@ -39,10 +59,43 @@ interface ResultadoExercicio {
   meses: number;
 }
 
+interface FormData {
+  nomeCliente: string;
+  cpf: string;
+  dataNascimento: string;
+  email: string;
+  telefone: string;
+  numeroProcesso: string;
+  vara: string;
+  comarca: string;
+  fontePagadora: string;
+  cnpj: string;
+  brutoHomologado: number;
+  tributavelHomologado: number;
+  numeroMeses: number;
+  alvaraValor: number;
+  alvaraData: string;
+  darfValor: number;
+  darfData: string;
+  honorariosValor: number;
+  honorariosAno: string;
+  statusPagamento: "pendente" | "pago" | "cancelado";
+}
+
 export default function Historico() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const canEdit = isAdmin || (user as any)?.canEdit === 'yes';
+  const canDelete = isAdmin; // Apenas admin pode excluir
+  
   const [search, setSearch] = useState("");
   const [selectedForm, setSelectedForm] = useState<number | null>(null);
+  const [editingForm, setEditingForm] = useState<number | null>(null);
+  const [deletingForm, setDeletingForm] = useState<number | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<{ formId: number; type: string; exercicio?: number } | null>(null);
+  const [editFormData, setEditFormData] = useState<FormData | null>(null);
+
+  const utils = trpc.useUtils();
 
   const { data: forms, isLoading } = trpc.irpf.list.useQuery({
     search: search || undefined,
@@ -52,6 +105,33 @@ export default function Historico() {
     { id: selectedForm! },
     { enabled: !!selectedForm }
   );
+
+  // Mutation para atualizar
+  const updateMutation = trpc.irpf.update.useMutation({
+    onSuccess: () => {
+      toast.success("Cálculo atualizado com sucesso!");
+      setEditingForm(null);
+      setEditFormData(null);
+      utils.irpf.list.invalidate();
+      utils.irpf.getById.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar: " + error.message);
+    },
+  });
+
+  // Mutation para deletar
+  const deleteMutation = trpc.irpf.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Cálculo excluído com sucesso!");
+      setDeletingForm(null);
+      setSelectedForm(null);
+      utils.irpf.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir: " + error.message);
+    },
+  });
 
   // Mutations para gerar PDFs
   const esclarecimentosMutation = trpc.pdf.esclarecimentos.useMutation({
@@ -109,11 +189,59 @@ export default function Historico() {
     window.print();
   };
 
+  const handleEdit = (form: any) => {
+    setEditFormData({
+      nomeCliente: form.nomeCliente || "",
+      cpf: form.cpf || "",
+      dataNascimento: form.dataNascimento || "",
+      email: form.email || "",
+      telefone: form.telefone || "",
+      numeroProcesso: form.numeroProcesso || "",
+      vara: form.vara || "",
+      comarca: form.comarca || "",
+      fontePagadora: form.fontePagadora || "",
+      cnpj: form.cnpj || "",
+      brutoHomologado: form.brutoHomologado || 0,
+      tributavelHomologado: form.tributavelHomologado || 0,
+      numeroMeses: form.numeroMeses || 0,
+      alvaraValor: form.alvaraValor || 0,
+      alvaraData: form.alvaraData || "",
+      darfValor: form.darfValor || 0,
+      darfData: form.darfData || "",
+      honorariosValor: form.honorariosValor || 0,
+      honorariosAno: form.honorariosAno || "",
+      statusPagamento: form.statusPagamento || "pendente",
+    });
+    setEditingForm(form.id);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editFormData || !editingForm) return;
+    
+    updateMutation.mutate({
+      id: editingForm,
+      data: editFormData,
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deletingForm) return;
+    deleteMutation.mutate({ id: deletingForm });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value / 100);
+  };
+
+  const formatCurrencyInput = (value: number) => {
+    return (value / 100).toFixed(2);
+  };
+
+  const parseCurrencyInput = (value: string) => {
+    return Math.round(parseFloat(value.replace(",", ".") || "0") * 100);
   };
 
   const formatDate = (date: Date | string | undefined) => {
@@ -137,7 +265,6 @@ export default function Historico() {
   // Extrair exercícios do formDetails
   const getExercicios = (): number[] => {
     if (!formDetails?.resultadosPorExercicio) {
-      // Se não há múltiplos exercícios, usa o exercício padrão
       const exercicioDefault = formDetails?.alvaraData 
         ? new Date(formDetails.alvaraData).getFullYear() + 1 
         : new Date().getFullYear();
@@ -183,6 +310,8 @@ export default function Historico() {
             <CardTitle>Cálculos Realizados</CardTitle>
             <CardDescription>
               {forms?.length || 0} registro(s) encontrado(s)
+              {isAdmin && <span className="ml-2 text-green-600">(Admin - pode editar e excluir)</span>}
+              {!isAdmin && canEdit && <span className="ml-2 text-blue-600">(Pode editar)</span>}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -191,7 +320,6 @@ export default function Historico() {
                 <Loader2 className="h-8 w-8 animate-spin text-green-600" />
               </div>
             ) : forms && forms.length > 0 ? (
-              // Ordenar por nome em ordem alfabética (A-Z)
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -217,7 +345,7 @@ export default function Historico() {
                         <TableCell>{getStatusBadge(form.statusPagamento)}</TableCell>
                         <TableCell>{formatDate(form.createdAt)}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -226,6 +354,28 @@ export default function Historico() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(form)}
+                                title="Editar"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingForm(form.id)}
+                                title="Excluir"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -304,16 +454,44 @@ export default function Historico() {
                     Informações completas do cálculo de restituição
                   </DialogDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrint}
-                  className="print:hidden"
-                  title="Imprimir"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Imprimir
-                </Button>
+                <div className="flex gap-2 print:hidden">
+                  {canEdit && formDetails && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleEdit(formDetails);
+                        setSelectedForm(null);
+                      }}
+                      className="text-blue-600"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  )}
+                  {canDelete && formDetails && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDeletingForm(formDetails.id);
+                      }}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrint}
+                    title="Imprimir"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Imprimir
+                  </Button>
+                </div>
               </div>
             </DialogHeader>
             {detailsLoading ? (
@@ -322,6 +500,23 @@ export default function Historico() {
               </div>
             ) : formDetails ? (
               <div className="space-y-6" id="print-content">
+                {/* Cabeçalho para Impressão */}
+                <div className="hidden print:block print:mb-6">
+                  <div className="flex items-center justify-between border-b-2 border-green-600 pb-4 mb-4">
+                    <div className="flex items-center gap-3">
+                      <img src="/logotipo-e-restituicaoIR.png" alt="e-Restituição" className="h-12" />
+                      <div>
+                        <h1 className="text-xl font-bold text-green-700">e-Restituição IRPF</h1>
+                        <p className="text-sm text-gray-500">Relatório de Cálculo de Restituição</p>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-gray-500">
+                      <p>Data: {new Date().toLocaleDateString('pt-BR')}</p>
+                      <p>Hora: {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Dados Pessoais */}
                 <div>
                   <h3 className="font-semibold text-sm text-muted-foreground mb-2">DADOS PESSOAIS</h3>
@@ -363,11 +558,11 @@ export default function Historico() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Fonte Pagadora</p>
-                      <p className="font-medium">{formDetails.fontePagadora}</p>
+                      <p className="font-medium">{formDetails.fontePagadora || '-'}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">CNPJ</p>
-                      <p className="font-medium">{formDetails.cnpj}</p>
+                      <p className="font-medium">{formDetails.cnpj || '-'}</p>
                     </div>
                   </div>
                 </div>
@@ -409,15 +604,15 @@ export default function Historico() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Proporção</p>
-                      <p className="font-medium">{formDetails.proporcao}</p>
+                      <p className="font-medium">{formDetails.proporcao || '-'}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Base de Cálculo</p>
-                      <p className="font-medium">{formatCurrency(formDetails.baseCalculo)}</p>
+                      <p className="font-medium">{formatCurrency(formDetails.baseCalculo || 0)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">IR Devido</p>
-                      <p className="font-medium">{formatCurrency(formDetails.irDevido)}</p>
+                      <p className="font-medium">{formatCurrency(formDetails.irDevido || 0)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">IRPF a Restituir</p>
@@ -452,13 +647,20 @@ export default function Historico() {
                   </div>
                 )}
 
+                {/* Rodapé para Impressão */}
+                <div className="hidden print:block print:mt-8 print:pt-4 print:border-t print:border-gray-300">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <p>Documento gerado pelo sistema e-Restituição IRPF</p>
+                    <p>Este documento é meramente informativo e não substitui a declaração oficial</p>
+                  </div>
+                </div>
+
                 {/* Botões de Download no Modal */}
                 <div className="pt-4 border-t print:hidden">
                   <h3 className="font-semibold text-sm text-muted-foreground mb-3">BAIXAR DOCUMENTOS</h3>
                   
                   {isMultipleExercicios ? (
                     <div className="space-y-4">
-                      {/* Esclarecimentos por exercício */}
                       <div>
                         <p className="text-sm font-medium mb-2">Esclarecimentos</p>
                         <div className="flex flex-wrap gap-2">
@@ -481,7 +683,6 @@ export default function Historico() {
                         </div>
                       </div>
                       
-                      {/* Planilha RT por exercício */}
                       <div>
                         <p className="text-sm font-medium mb-2">Planilha RT</p>
                         <div className="flex flex-wrap gap-2">
@@ -551,11 +752,294 @@ export default function Historico() {
             ) : null}
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Edição */}
+        <Dialog open={!!editingForm} onOpenChange={() => { setEditingForm(null); setEditFormData(null); }}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Cálculo</DialogTitle>
+              <DialogDescription>
+                Altere os dados do cálculo. Os valores serão recalculados automaticamente.
+              </DialogDescription>
+            </DialogHeader>
+            {editFormData && (
+              <div className="space-y-6">
+                {/* Dados Pessoais */}
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">DADOS PESSOAIS</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nomeCliente">Nome Completo</Label>
+                      <Input
+                        id="nomeCliente"
+                        value={editFormData.nomeCliente}
+                        onChange={(e) => setEditFormData({ ...editFormData, nomeCliente: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <Input
+                        id="cpf"
+                        value={editFormData.cpf}
+                        onChange={(e) => setEditFormData({ ...editFormData, cpf: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        value={editFormData.dataNascimento}
+                        onChange={(e) => setEditFormData({ ...editFormData, dataNascimento: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input
+                        id="telefone"
+                        value={editFormData.telefone}
+                        onChange={(e) => setEditFormData({ ...editFormData, telefone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Processuais */}
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">DADOS PROCESSUAIS</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="numeroProcesso">Número do Processo</Label>
+                      <Input
+                        id="numeroProcesso"
+                        value={editFormData.numeroProcesso}
+                        onChange={(e) => setEditFormData({ ...editFormData, numeroProcesso: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vara">Vara</Label>
+                      <Input
+                        id="vara"
+                        value={editFormData.vara}
+                        onChange={(e) => setEditFormData({ ...editFormData, vara: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="comarca">Comarca</Label>
+                      <Input
+                        id="comarca"
+                        value={editFormData.comarca}
+                        onChange={(e) => setEditFormData({ ...editFormData, comarca: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fontePagadora">Fonte Pagadora</Label>
+                      <Input
+                        id="fontePagadora"
+                        value={editFormData.fontePagadora}
+                        onChange={(e) => setEditFormData({ ...editFormData, fontePagadora: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cnpj">CNPJ</Label>
+                      <Input
+                        id="cnpj"
+                        value={editFormData.cnpj}
+                        onChange={(e) => setEditFormData({ ...editFormData, cnpj: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Valores */}
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">VALORES</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="brutoHomologado">Bruto Homologado (R$)</Label>
+                      <Input
+                        id="brutoHomologado"
+                        type="number"
+                        step="0.01"
+                        value={formatCurrencyInput(editFormData.brutoHomologado)}
+                        onChange={(e) => setEditFormData({ ...editFormData, brutoHomologado: parseCurrencyInput(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tributavelHomologado">Tributável Homologado (R$)</Label>
+                      <Input
+                        id="tributavelHomologado"
+                        type="number"
+                        step="0.01"
+                        value={formatCurrencyInput(editFormData.tributavelHomologado)}
+                        onChange={(e) => setEditFormData({ ...editFormData, tributavelHomologado: parseCurrencyInput(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="numeroMeses">Número de Meses (RRA)</Label>
+                      <Input
+                        id="numeroMeses"
+                        type="number"
+                        value={editFormData.numeroMeses}
+                        onChange={(e) => setEditFormData({ ...editFormData, numeroMeses: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="alvaraValor">Valor do Alvará (R$)</Label>
+                      <Input
+                        id="alvaraValor"
+                        type="number"
+                        step="0.01"
+                        value={formatCurrencyInput(editFormData.alvaraValor)}
+                        onChange={(e) => setEditFormData({ ...editFormData, alvaraValor: parseCurrencyInput(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="alvaraData">Data do Alvará</Label>
+                      <Input
+                        id="alvaraData"
+                        type="date"
+                        value={editFormData.alvaraData}
+                        onChange={(e) => setEditFormData({ ...editFormData, alvaraData: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="darfValor">Valor do DARF (R$)</Label>
+                      <Input
+                        id="darfValor"
+                        type="number"
+                        step="0.01"
+                        value={formatCurrencyInput(editFormData.darfValor)}
+                        onChange={(e) => setEditFormData({ ...editFormData, darfValor: parseCurrencyInput(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="darfData">Data do DARF</Label>
+                      <Input
+                        id="darfData"
+                        type="date"
+                        value={editFormData.darfData}
+                        onChange={(e) => setEditFormData({ ...editFormData, darfData: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="honorariosValor">Valor dos Honorários (R$)</Label>
+                      <Input
+                        id="honorariosValor"
+                        type="number"
+                        step="0.01"
+                        value={formatCurrencyInput(editFormData.honorariosValor)}
+                        onChange={(e) => setEditFormData({ ...editFormData, honorariosValor: parseCurrencyInput(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="honorariosAno">Ano dos Honorários</Label>
+                      <Input
+                        id="honorariosAno"
+                        value={editFormData.honorariosAno}
+                        onChange={(e) => setEditFormData({ ...editFormData, honorariosAno: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">STATUS</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="statusPagamento">Status do Pagamento</Label>
+                    <Select
+                      value={editFormData.statusPagamento}
+                      onValueChange={(value: "pendente" | "pago" | "cancelado") => setEditFormData({ ...editFormData, statusPagamento: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="pago">Pago</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setEditingForm(null); setEditFormData(null); }}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveEdit} 
+                disabled={updateMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar Alterações"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Confirmação de Exclusão */}
+        <AlertDialog open={!!deletingForm} onOpenChange={() => setDeletingForm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                Confirmar Exclusão
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este cálculo? Esta ação não pode ser desfeita.
+                Todos os dados relacionados serão permanentemente removidos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  "Excluir"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Estilos para impressão */}
       <style>{`
         @media print {
+          @page {
+            size: A4;
+            margin: 15mm 20mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
           body * {
             visibility: hidden;
           }
@@ -567,7 +1051,76 @@ export default function Historico() {
             left: 0;
             top: 0;
             width: 100%;
-            padding: 20px;
+            padding: 20mm;
+            font-size: 10pt;
+            line-height: 1.4;
+          }
+          #print-content > div {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            background-color: #fff;
+          }
+          #print-content > div.hidden {
+            border: none;
+            padding: 0;
+            background: transparent;
+          }
+          #print-content h3 {
+            font-size: 9pt;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #16a34a;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+          }
+          #print-content .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 20px;
+          }
+          #print-content .grid > div {
+            padding: 4px 0;
+          }
+          #print-content .grid p.text-muted-foreground {
+            font-size: 8pt;
+            color: #6b7280;
+            margin-bottom: 2px;
+          }
+          #print-content .grid p.font-medium {
+            font-size: 10pt;
+            color: #111827;
+            font-weight: 500;
+          }
+          #print-content .bg-green-50 {
+            background-color: #f0fdf4 !important;
+            border: 2px solid #16a34a !important;
+            padding: 16px;
+            border-radius: 6px;
+          }
+          #print-content .bg-green-50 h3 {
+            color: #15803d;
+            border-bottom-color: #15803d;
+          }
+          #print-content .bg-blue-50 {
+            background-color: #eff6ff !important;
+            border: 2px solid #2563eb !important;
+            padding: 16px;
+            border-radius: 6px;
+          }
+          #print-content .bg-blue-50 h3 {
+            color: #1d4ed8;
+            border-bottom-color: #1d4ed8;
+          }
+          #print-content .text-green-700 {
+            color: #15803d !important;
+          }
+          #print-content .font-bold.text-lg {
+            font-size: 14pt !important;
+            font-weight: 700 !important;
           }
           .print\\:hidden {
             display: none !important;

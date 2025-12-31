@@ -21,19 +21,20 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, FileText, History, Download, Bell, Settings, LogOut, PanelLeft } from "lucide-react";
+import { LayoutDashboard, FileText, History, Download, Bell, Settings, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: FileText, label: "Novo Cálculo", path: "/novo-calculo" },
-  { icon: History, label: "Histórico", path: "/historico" },
-  { icon: Download, label: "Exportar", path: "/exportar" },
-  { icon: Bell, label: "Notificações", path: "/notificacoes" },
-  { icon: Settings, label: "Configurações", path: "/configuracoes" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/", adminOnly: false },
+  { icon: FileText, label: "Novo Cálculo", path: "/novo-calculo", adminOnly: false },
+  { icon: History, label: "Histórico", path: "/historico", adminOnly: false },
+  { icon: Download, label: "Exportar", path: "/exportar", adminOnly: false },
+  { icon: Bell, label: "Notificações", path: "/notificacoes", adminOnly: false },
+  { icon: Users, label: "Usuários", path: "/usuarios", adminOnly: true },
+  { icon: Settings, label: "Configurações", path: "/configuracoes", adminOnly: false },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -122,6 +123,8 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
+  const isAdmin = user?.role === 'admin';
+  const visibleMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -191,7 +194,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 pt-4">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {visibleMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>

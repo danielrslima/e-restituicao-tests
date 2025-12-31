@@ -20,8 +20,8 @@ import {
   getDb,
 } from "./db";
 import { calcularIRPF as calcularIRPFCompleto, DadosEntrada } from "./services/irpfCalculationService";
-import { irpfForms } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { irpfForms, users } from "../drizzle/schema";
+import { eq, like, or } from "drizzle-orm";
 import { notifyOwner } from "./_core/notification";
 import { generateEsclarecimentosPDF, EsclarecimentosData } from "./services/pdfEsclarecimentosService";
 import { generatePlanilhaRTPDF, PlanilhaRTData } from "./services/pdfPlanilhaRTService";
@@ -560,6 +560,86 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteNote(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================================================
+  // Users Router (Admin only)
+  // ============================================================================
+  users: router({
+    // Listar usuários
+    list: adminProcedure
+      .input(z.object({
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        let query = db.select().from(users);
+        
+        if (input?.search) {
+          const searchTerm = `%${input.search}%`;
+          query = query.where(
+            or(
+              like(users.name, searchTerm),
+              like(users.email, searchTerm)
+            )
+          ) as typeof query;
+        }
+        
+        return await query;
+      }),
+
+    // Atualizar role do usuário
+    updateRole: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["user", "admin"]),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        await db.update(users)
+          .set({ role: input.role })
+          .where(eq(users.id, input.userId));
+        
+        return { success: true };
+      }),
+
+    // Atualizar permissão de edição
+    updateCanEdit: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        canEdit: z.enum(["yes", "no"]),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        await db.update(users)
+          .set({ canEdit: input.canEdit })
+          .where(eq(users.id, input.userId));
+        
+        return { success: true };
+      }),
+
+    // Deletar usuário
+    delete: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Não permitir deletar a si mesmo
+        if (input.userId === ctx.user?.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Você não pode remover a si mesmo' });
+        }
+
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        await db.delete(users).where(eq(users.id, input.userId));
+        
         return { success: true };
       }),
   }),
