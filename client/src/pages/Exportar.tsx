@@ -24,11 +24,32 @@ export default function Exportar() {
     { enabled: !!selectedFormId }
   );
 
+  // Mutations para gerar PDFs
+  const esclarecimentosMutation = trpc.pdf.esclarecimentos.useMutation();
+  const planilhaRTMutation = trpc.pdf.planilhaRT.useMutation();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value / 100);
+  };
+
+  const downloadPdfFromBase64 = (base64: string, filename: string) => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const exportToJSON = () => {
@@ -50,84 +71,25 @@ export default function Exportar() {
 
     setExporting(true);
     try {
-      // Criar conteúdo HTML para o PDF
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Relatório de Restituição IRPF</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-            h1 { color: #16a34a; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
-            h2 { color: #374151; margin-top: 30px; }
-            .section { margin-bottom: 20px; }
-            .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-            .label { color: #6b7280; }
-            .value { font-weight: 600; }
-            .result { background: #f0fdf4; padding: 20px; border-radius: 8px; margin-top: 20px; }
-            .result h2 { color: #16a34a; margin-top: 0; }
-            .total { font-size: 24px; color: #16a34a; font-weight: bold; }
-            .footer { margin-top: 40px; text-align: center; color: #9ca3af; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório de Restituição IRPF</h1>
-          
-          <div class="section">
-            <h2>Dados Pessoais</h2>
-            <div class="row"><span class="label">Nome:</span><span class="value">${formDetails.nomeCliente}</span></div>
-            <div class="row"><span class="label">CPF:</span><span class="value">${formDetails.cpf}</span></div>
-            <div class="row"><span class="label">Data de Nascimento:</span><span class="value">${formDetails.dataNascimento}</span></div>
-            <div class="row"><span class="label">E-mail:</span><span class="value">${formDetails.email}</span></div>
-          </div>
+      // Gerar os dois PDFs
+      const [esclarecimentosResult, planilhaRTResult] = await Promise.all([
+        esclarecimentosMutation.mutateAsync({ formId: formDetails.id }),
+        planilhaRTMutation.mutateAsync({ formId: formDetails.id }),
+      ]);
 
-          <div class="section">
-            <h2>Dados Processuais</h2>
-            <div class="row"><span class="label">Número do Processo:</span><span class="value">${formDetails.numeroProcesso}</span></div>
-            <div class="row"><span class="label">Vara:</span><span class="value">${formDetails.vara}</span></div>
-            <div class="row"><span class="label">Comarca:</span><span class="value">${formDetails.comarca}</span></div>
-            <div class="row"><span class="label">Fonte Pagadora:</span><span class="value">${formDetails.fontePagadora}</span></div>
-            <div class="row"><span class="label">CNPJ:</span><span class="value">${formDetails.cnpj}</span></div>
-          </div>
+      // Baixar PDF de Esclarecimentos
+      downloadPdfFromBase64(esclarecimentosResult.pdf, esclarecimentosResult.filename);
+      
+      // Pequeno delay para não sobrecarregar o navegador
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Baixar PDF de Planilha RT
+      downloadPdfFromBase64(planilhaRTResult.pdf, planilhaRTResult.filename);
 
-          <div class="section">
-            <h2>Valores Informados</h2>
-            <div class="row"><span class="label">Rendimento Bruto Homologado:</span><span class="value">${formatCurrency(formDetails.brutoHomologado)}</span></div>
-            <div class="row"><span class="label">Rendimento Tributável Homologado:</span><span class="value">${formatCurrency(formDetails.tributavelHomologado)}</span></div>
-            <div class="row"><span class="label">Valor do Alvará:</span><span class="value">${formatCurrency(formDetails.alvaraValor)}</span></div>
-            <div class="row"><span class="label">DARF/IR Retido:</span><span class="value">${formatCurrency(formDetails.darfValor)}</span></div>
-            <div class="row"><span class="label">Honorários Advocatícios:</span><span class="value">${formatCurrency(formDetails.honorariosValor)}</span></div>
-            <div class="row"><span class="label">Número de Meses (RRA):</span><span class="value">${formDetails.numeroMeses}</span></div>
-          </div>
-
-          <div class="result">
-            <h2>Resultado do Cálculo</h2>
-            <div class="row"><span class="label">Proporção Tributável:</span><span class="value">${formDetails.proporcao}</span></div>
-            <div class="row"><span class="label">Base de Cálculo:</span><span class="value">${formatCurrency(formDetails.baseCalculo)}</span></div>
-            <div class="row"><span class="label">IR Devido:</span><span class="value">${formatCurrency(formDetails.irDevido)}</span></div>
-            <div class="row"><span class="label">IRPF a Restituir:</span><span class="total">${formatCurrency(formDetails.irpfRestituir)}</span></div>
-          </div>
-
-          <div class="footer">
-            <p>Documento gerado pelo sistema e-Restituição IRPF</p>
-            <p>Data de geração: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Abrir em nova janela para impressão/PDF
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.print();
-      }
-
-      toast.success("Relatório PDF gerado com sucesso!");
+      toast.success("PDFs exportados com sucesso! (Esclarecimentos e Planilha RT)");
     } catch (error) {
-      toast.error("Erro ao gerar PDF");
+      console.error("Erro ao gerar PDFs:", error);
+      toast.error("Erro ao gerar PDFs. Tente novamente.");
     } finally {
       setExporting(false);
     }
@@ -225,6 +187,12 @@ export default function Exportar() {
                   Exportar JSON
                 </Button>
               </div>
+
+              {selectedFormId && (
+                <p className="text-xs text-muted-foreground text-center">
+                  O botão "Exportar PDF" baixa 2 arquivos: Esclarecimentos e Planilha RT
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -274,12 +242,15 @@ export default function Exportar() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-red-500" />
-                  <span className="font-medium">PDF</span>
+                  <span className="font-medium">PDF (Kit IR)</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Formato ideal para impressão e arquivamento. Contém um relatório formatado 
-                  com todos os dados do cálculo, pronto para ser anexado aos documentos do processo.
+                  Exporta dois documentos prontos para protocolar na Receita Federal:
                 </p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside ml-2">
+                  <li><strong>Esclarecimentos</strong> - Documento explicativo com dados da ação e valores</li>
+                  <li><strong>Planilha RT</strong> - Demonstrativo de apuração das verbas tributáveis</li>
+                </ul>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">

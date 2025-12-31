@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Search, FileText, Download, Eye, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -21,10 +22,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Historico() {
   const [search, setSearch] = useState("");
   const [selectedForm, setSelectedForm] = useState<number | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<{ formId: number; type: string } | null>(null);
 
   const { data: forms, isLoading } = trpc.irpf.list.useQuery({
     search: search || undefined,
@@ -34,6 +44,71 @@ export default function Historico() {
     { id: selectedForm! },
     { enabled: !!selectedForm }
   );
+
+  // Mutations para gerar PDFs
+  const esclarecimentosMutation = trpc.pdf.esclarecimentos.useMutation({
+    onSuccess: (data) => {
+      // Converter base64 para blob e fazer download
+      const byteCharacters = atob(data.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success("PDF de Esclarecimentos baixado com sucesso!");
+      setDownloadingPdf(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao gerar PDF: " + error.message);
+      setDownloadingPdf(null);
+    },
+  });
+
+  const planilhaRTMutation = trpc.pdf.planilhaRT.useMutation({
+    onSuccess: (data) => {
+      // Converter base64 para blob e fazer download
+      const byteCharacters = atob(data.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success("PDF de Planilha RT baixado com sucesso!");
+      setDownloadingPdf(null);
+    },
+    onError: (error) => {
+      toast.error("Erro ao gerar PDF: " + error.message);
+      setDownloadingPdf(null);
+    },
+  });
+
+  const handleDownloadEsclarecimentos = (formId: number) => {
+    setDownloadingPdf({ formId, type: 'esclarecimentos' });
+    esclarecimentosMutation.mutate({ formId });
+  };
+
+  const handleDownloadPlanilhaRT = (formId: number) => {
+    setDownloadingPdf({ formId, type: 'planilhaRT' });
+    planilhaRTMutation.mutate({ formId });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -121,24 +196,59 @@ export default function Historico() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedForm(form.id)}
+                              title="Ver detalhes"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const dataStr = JSON.stringify(form, null, 2);
-                                const blob = new Blob([dataStr], { type: 'application/json' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = `calculo-${form.cpf}-${form.id}.json`;
-                                a.click();
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={downloadingPdf?.formId === form.id}
+                                  title="Baixar PDFs"
+                                >
+                                  {downloadingPdf?.formId === form.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Baixar PDF</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDownloadEsclarecimentos(form.id)}
+                                  disabled={downloadingPdf?.formId === form.id}
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Esclarecimentos
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDownloadPlanilhaRT(form.id)}
+                                  disabled={downloadingPdf?.formId === form.id}
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Planilha RT
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const dataStr = JSON.stringify(form, null, 2);
+                                    const blob = new Blob([dataStr], { type: 'application/json' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `calculo-${form.cpf}-${form.id}.json`;
+                                    a.click();
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  JSON (dados brutos)
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -276,6 +386,36 @@ export default function Historico() {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Botões de Download no Modal */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleDownloadEsclarecimentos(formDetails.id)}
+                    disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos'}
+                  >
+                    {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'esclarecimentos' ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Esclarecimentos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleDownloadPlanilhaRT(formDetails.id)}
+                    disabled={downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT'}
+                  >
+                    {downloadingPdf?.formId === formDetails.id && downloadingPdf?.type === 'planilhaRT' ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Planilha RT
+                  </Button>
                 </div>
 
                 {/* Status */}

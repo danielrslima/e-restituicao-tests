@@ -74,4 +74,5 @@
 - [x] Suportar exercício único e múltiplos exercícios
 - [x] Testar com casos Ana Carmen e José Ramos
 - [x] Criar rotas tRPC para geração de PDFs (pdf.esclarecimentos e pdf.planilhaRT)
-- [ ] Adicionar botões de download no dashboard
+- [x] Conectar botões de download existentes às rotas de PDF (página Histórico)
+- [x] Atualizar botão "Exportar PDF" na página Exportar para baixar os dois PDFs
