@@ -43,3 +43,9 @@
 
 **Fase atual:** Motor de cálculo corrigido e validado
 **Última atualização:** 2024-12-30 - Motor de cálculo 100% validado contra planilha Excel
+
+## Atualização do Formulário (30/12/2024)
+
+- [x] Adicionar campo "Bruto Homologado" no formulário de entrada (já implementado)
+- [x] Adicionar campo "Tributável Homologado" no formulário de entrada (já implementado)
+- [x] Validar que os novos campos são salvos corretamente no banco de dados (já implementado)
