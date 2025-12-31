@@ -87,3 +87,19 @@
 - [x] Adicionar botão de imprimir na janela de detalhes
 - [x] Mostrar downloads individuais por exercício para casos de múltiplos anos
 - [x] Agrupar Esclarecimentos e Planilha RT separadamente no modal
+
+## Pendências Futuras
+
+- [ ] Integração com site externo restituicaoia.com.br (receber dados via API)
+- [ ] Funcionalidade de edição de cálculos existentes
+- [ ] Funcionalidade de exclusão de cálculos
+- [ ] Validar PDFs gerados pixel a pixel contra modelos de referência
+- [ ] Agendamento de emails (7 dias após pagamento)
+- [ ] Gestão de Kit IR (segundo pagamento)
+- [ ] Relatório consolidado de múltiplos clientes
+
+## Informações para Retomada
+
+**Último checkpoint:** 62e4e704 (31/12/2024)
+**Testes:** 26 passando
+**Documentação completa:** DOCUMENTACAO-PROJETO.md
