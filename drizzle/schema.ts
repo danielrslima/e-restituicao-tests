@@ -79,6 +79,8 @@ export const irpfForms = mysqlTable("irpf_forms", {
   // URLs dos PDFs gerados
   pdfPlanilhaUrl: text("pdf_planilha_url"),
   pdfEsclarecimentosUrl: text("pdf_esclarecimentos_url"),
+  // Resultados por exercício (JSON) - para casos de múltiplos anos
+  resultadosPorExercicio: text("resultados_por_exercicio"),
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

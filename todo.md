@@ -80,3 +80,4 @@
 ## Correções de PDF (31/12/2024)
 
 - [x] Corrigir cor do cabeçalho do PDF Planilha RT (preto → cinza)
+- [x] Gerar PDFs para todos os exercícios em casos de múltiplos anos (Ana Carmen: 2022, 2023, 2025)

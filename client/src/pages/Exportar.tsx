@@ -13,6 +13,14 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+interface ResultadoExercicio {
+  exercicio: number;
+  irpfRestituir: number;
+  rendimentosTributaveis: number;
+  irRetido: number;
+  meses: number;
+}
+
 export default function Exportar() {
   const [selectedFormId, setSelectedFormId] = useState<string>("");
   const [exporting, setExporting] = useState(false);
@@ -71,22 +79,55 @@ export default function Exportar() {
 
     setExporting(true);
     try {
-      // Gerar os dois PDFs
-      const [esclarecimentosResult, planilhaRTResult] = await Promise.all([
-        esclarecimentosMutation.mutateAsync({ formId: formDetails.id }),
-        planilhaRTMutation.mutateAsync({ formId: formDetails.id }),
-      ]);
-
-      // Baixar PDF de Esclarecimentos
-      downloadPdfFromBase64(esclarecimentosResult.pdf, esclarecimentosResult.filename);
+      // Verificar se há resultados por exercício (múltiplos anos)
+      let exercicios: number[] = [];
       
-      // Pequeno delay para não sobrecarregar o navegador
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (formDetails.resultadosPorExercicio) {
+        try {
+          const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+          exercicios = resultados.map(r => r.exercicio);
+        } catch {
+          // Se não conseguir parsear, usa exercício único
+        }
+      }
       
-      // Baixar PDF de Planilha RT
-      downloadPdfFromBase64(planilhaRTResult.pdf, planilhaRTResult.filename);
+      // Se não há múltiplos exercícios, usa o exercício padrão
+      if (exercicios.length === 0) {
+        const exercicioDefault = formDetails.alvaraData 
+          ? new Date(formDetails.alvaraData).getFullYear() + 1 
+          : new Date().getFullYear();
+        exercicios = [exercicioDefault];
+      }
 
-      toast.success("PDFs exportados com sucesso! (Esclarecimentos e Planilha RT)");
+      // Gerar PDFs para cada exercício
+      let downloadCount = 0;
+      for (const exercicio of exercicios) {
+        // Gerar PDF de Esclarecimentos
+        const esclarecimentosResult = await esclarecimentosMutation.mutateAsync({ 
+          formId: formDetails.id, 
+          exercicio 
+        });
+        downloadPdfFromBase64(esclarecimentosResult.pdf, esclarecimentosResult.filename);
+        downloadCount++;
+        
+        // Pequeno delay para não sobrecarregar o navegador
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Gerar PDF de Planilha RT
+        const planilhaRTResult = await planilhaRTMutation.mutateAsync({ 
+          formId: formDetails.id, 
+          exercicio 
+        });
+        downloadPdfFromBase64(planilhaRTResult.pdf, planilhaRTResult.filename);
+        downloadCount++;
+        
+        // Delay entre exercícios
+        if (exercicios.indexOf(exercicio) < exercicios.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+
+      toast.success(`${downloadCount} PDFs exportados com sucesso! (${exercicios.length} exercício(s))`);
     } catch (error) {
       console.error("Erro ao gerar PDFs:", error);
       toast.error("Erro ao gerar PDFs. Tente novamente.");
@@ -108,6 +149,22 @@ export default function Exportar() {
     URL.revokeObjectURL(url);
     toast.success("Todos os cálculos exportados com sucesso!");
   };
+
+  // Calcular número de exercícios para exibição
+  const getExerciciosInfo = () => {
+    if (!formDetails?.resultadosPorExercicio) return null;
+    try {
+      const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+      return {
+        count: resultados.length,
+        anos: resultados.map(r => r.exercicio).join(', ')
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const exerciciosInfo = formDetails ? getExerciciosInfo() : null;
 
   return (
     <DashboardLayout>
@@ -161,6 +218,11 @@ export default function Exportar() {
                   <p className="text-sm font-medium text-green-600">
                     Restituição: {formatCurrency(formDetails.irpfRestituir)}
                   </p>
+                  {exerciciosInfo && exerciciosInfo.count > 1 && (
+                    <p className="text-sm text-blue-600 font-medium">
+                      📅 {exerciciosInfo.count} exercícios: {exerciciosInfo.anos}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -190,7 +252,10 @@ export default function Exportar() {
 
               {selectedFormId && (
                 <p className="text-xs text-muted-foreground text-center">
-                  O botão "Exportar PDF" baixa 2 arquivos: Esclarecimentos e Planilha RT
+                  {exerciciosInfo && exerciciosInfo.count > 1 
+                    ? `Serão baixados ${exerciciosInfo.count * 2} PDFs (Esclarecimentos + Planilha RT para cada exercício)`
+                    : 'O botão "Exportar PDF" baixa 2 arquivos: Esclarecimentos e Planilha RT'
+                  }
                 </p>
               )}
             </CardContent>
@@ -245,12 +310,15 @@ export default function Exportar() {
                   <span className="font-medium">PDF (Kit IR)</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Exporta dois documentos prontos para protocolar na Receita Federal:
+                  Exporta documentos prontos para protocolar na Receita Federal:
                 </p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside ml-2">
                   <li><strong>Esclarecimentos</strong> - Documento explicativo com dados da ação e valores</li>
                   <li><strong>Planilha RT</strong> - Demonstrativo de apuração das verbas tributáveis</li>
                 </ul>
+                <p className="text-sm text-blue-600 mt-2">
+                  💡 Para casos com múltiplos exercícios, são gerados 2 PDFs por ano.
+                </p>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">

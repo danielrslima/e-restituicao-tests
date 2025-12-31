@@ -1,0 +1,1 @@
+ALTER TABLE `irpf_forms` ADD `resultados_por_exercicio` text;

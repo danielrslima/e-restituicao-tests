@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE irpf_forms \nSET resultados_por_exercicio = '[{\"exercicio\":2022,\"irpfRestituir\":-1418481,\"rendimentosTributaveis\":77279040,\"irRetido\":17452734,\"meses\":26.90},{\"exercicio\":2023,\"irpfRestituir\":2024737,\"rendimentosTributaveis\":31002284,\"irRetido\":14591903,\"meses\":9.70},{\"exercicio\":2025,\"irpfRestituir\":2145280,\"rendimentosTributaveis\":28971649,\"irRetido\":12027449,\"meses\":12.40}]'\nWHERE nome_cliente = 'ANA CARMEN COLLODETTI BRUGGER';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute UPDATE irpf_forms \nSET resultados_por_exercicio = '[{\"exercicio\":2022,\"irpfRestituir\":-1418481,\"rendimentosTributaveis\":77279040,\"irRetido\":17452734,\"meses\":26.90},{\"exercicio\":2023,\"irpfRestituir\":2024737,\"rendimentosTributaveis\":31002284,\"irRetido\":14591903,\"meses\":9.70},{\"exercicio\":2025,\"irpfRestituir\":2145280,\"rendimentosTributaveis\":28971649,\"irRetido\":12027449,\"meses\":12.40}]'\nWHERE nome_cliente = 'ANA CARMEN COLLODETTI BRUGGER';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1504
+}

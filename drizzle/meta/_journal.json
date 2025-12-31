@@ -15,6 +15,13 @@
       "when": 1767137230786,
       "tag": "0001_uneven_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1767150284654,
+      "tag": "0002_loving_captain_midlands",
+      "breakpoints": true
     }
   ]
 }
