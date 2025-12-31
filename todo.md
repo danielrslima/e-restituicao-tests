@@ -57,3 +57,11 @@
 - [x] Corrigir função calcularIRPF no db.ts (usada pelo formulário web)
 - [x] Atualizar testes para refletir fórmulas corretas
 - [x] Todos os 26 testes passando
+
+## Detecção Automática de Múltiplos Exercícios (30/12/2024)
+
+- [x] Implementar detecção automática baseada nos dados preenchidos
+- [x] Ignorar escolha do usuário (mesmo ano / anos diferentes)
+- [x] Detectar múltiplos exercícios quando: alvarás em anos diferentes OU DARFs em anos diferentes
+- [x] Criar rota pública `calculoExterno.calcular` para receber dados da página externa
+- [x] Usar motor simples para exercício único, motor completo para múltiplos exercícios

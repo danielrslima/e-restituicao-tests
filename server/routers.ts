@@ -19,6 +19,7 @@ import {
   getStatistics,
   getDb,
 } from "./db";
+import { calcularIRPF as calcularIRPFCompleto, DadosEntrada } from "./services/irpfCalculationService";
 import { irpfForms } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { notifyOwner } from "./_core/notification";
@@ -31,7 +32,49 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-// Schema de validação para formulário IRPF
+// Schema para linha de alvará/honorário (usado pela página externa)
+const linhaCalculoSchema = z.object({
+  valorAlvara: z.number().min(0),
+  dataAlvara: z.string().min(1), // formato: YYYY-MM-DD
+  valorHonorario: z.number().optional(),
+  anoPagoHonorario: z.number().optional(),
+});
+
+// Schema para DARF (usado pela página externa)
+const darfSchema = z.object({
+  valor: z.number().min(0),
+  data: z.string().min(1), // formato: YYYY-MM-DD
+  fontePagadora: z.string().optional(),
+  cnpj: z.string().optional(),
+});
+
+// Schema para cálculo externo com múltiplos exercícios
+const calculoExternoSchema = z.object({
+  // Dados pessoais
+  nomeCliente: z.string().min(1, "Nome é obrigatório"),
+  cpf: z.string().min(11, "CPF inválido"),
+  dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+  email: z.string().email("Email inválido"),
+  telefone: z.string().optional(),
+  // Dados processuais
+  numeroProcesso: z.string().min(1, "Número do processo é obrigatório"),
+  vara: z.string().min(1, "Vara é obrigatória"),
+  comarca: z.string().min(1, "Comarca é obrigatória"),
+  fontePagadora: z.string().optional(),
+  cnpj: z.string().optional(),
+  // Valores homologados
+  brutoHomologado: z.number().min(0),
+  tributavelHomologado: z.number().min(0),
+  numeroMeses: z.number().min(1),
+  // Múltiplas linhas de alvarás/honorários
+  linhas: z.array(linhaCalculoSchema).min(1, "Pelo menos uma linha de alvará é obrigatória"),
+  // Múltiplos DARFs
+  darfs: z.array(darfSchema).min(1, "Pelo menos um DARF é obrigatório"),
+  // Opções (ignoradas - sistema detecta automaticamente)
+  tipoCalculo: z.enum(["mesmo_ano", "anos_diferentes"]).optional(), // IGNORADO
+});
+
+// Schema de validação para formulário IRPF (simples - uma linha)
 const irpfFormInputSchema = z.object({
   nomeCliente: z.string().min(1, "Nome é obrigatório"),
   cpf: z.string().min(11, "CPF inválido"),
@@ -203,6 +246,155 @@ export const appRouter = router({
     statistics: adminProcedure.query(async () => {
       return getStatistics();
     }),
+  }),
+
+  // ============================================================================
+  // Cálculo Externo (página restituicaoia.com.br)
+  // ============================================================================
+  calculoExterno: router({
+    /**
+     * Rota pública para receber dados da página externa restituicaoia.com.br
+     * Detecta automaticamente se é caso de múltiplos exercícios baseado nos dados
+     * A escolha do usuário (mesmo_ano/anos_diferentes) é IGNORADA
+     */
+    calcular: publicProcedure
+      .input(calculoExternoSchema)
+      .mutation(async ({ input }) => {
+        // Detectar automaticamente se é múltiplos exercícios baseado nos ANOS dos alvarás e DARFs
+        const anosAlvaras = new Set(input.linhas.map(l => new Date(l.dataAlvara).getUTCFullYear()));
+        const anosDarfs = new Set(input.darfs.map(d => new Date(d.data).getUTCFullYear()));
+        const isMultiplosExercicios = anosAlvaras.size > 1 || anosDarfs.size > 1;
+
+        let resultado;
+
+        if (isMultiplosExercicios) {
+          // MÚTIPLOS EXERCÍCIOS: usar motor completo
+          const dadosCalculo: DadosEntrada = {
+            nomeCliente: input.nomeCliente,
+            cpf: input.cpf,
+            dataNascimento: new Date(input.dataNascimento),
+            numeroProcesso: input.numeroProcesso,
+            comarca: input.comarca,
+            vara: input.vara,
+            brutoHomologado: input.brutoHomologado / 100, // centavos para reais
+            tributavelHomologado: input.tributavelHomologado / 100,
+            numeroMeses: input.numeroMeses,
+            linhas: input.linhas.map(l => ({
+              valorAlvara: l.valorAlvara / 100,
+              dataAlvara: new Date(l.dataAlvara),
+              valorHonorario: l.valorHonorario ? l.valorHonorario / 100 : undefined,
+              anoPagoHonorario: l.anoPagoHonorario,
+            })),
+            darfs: input.darfs.map(d => ({
+              valor: d.valor / 100,
+              data: new Date(d.data),
+              fontePagadora: d.fontePagadora,
+              cnpj: d.cnpj,
+            })),
+            usarDeflacao: true, // Múltiplos anos = usar deflação IPCA
+          };
+
+          resultado = calcularIRPFCompleto(dadosCalculo);
+        } else {
+          // EXERCÍCIO ÚNICO: usar motor simples (mais rápido)
+          // Somar todos os alvarás, DARFs e honorários
+          const totalAlvara = input.linhas.reduce((sum, l) => sum + l.valorAlvara, 0);
+          const totalDarf = input.darfs.reduce((sum, d) => sum + d.valor, 0);
+          const totalHonorarios = input.linhas.reduce((sum, l) => sum + (l.valorHonorario || 0), 0);
+
+          const calculoSimples = calcularIRPF({
+            brutoHomologado: input.brutoHomologado,
+            tributavelHomologado: input.tributavelHomologado,
+            numeroMeses: input.numeroMeses,
+            alvaraValor: totalAlvara,
+            darfValor: totalDarf,
+            honorariosValor: totalHonorarios,
+          });
+
+          // Converter para formato compatível
+          const anoExercicio = Array.from(anosAlvaras)[0] + 1; // Exercício = ano alvará + 1
+          resultado = {
+            proporcaoTributavel: parseFloat(calculoSimples.proporcao) / 100,
+            totalAlvarasDeflacionados: totalAlvara / 100,
+            totalDarfOriginal: totalDarf / 100,
+            exercicios: [{
+              exercicio: anoExercicio,
+              rendimentosTributaveis: calculoSimples.baseCalculo / 100,
+              irrf: totalDarf / 100,
+              numeroMeses: input.numeroMeses,
+              irpf: calculoSimples.irpfRestituir / 100,
+              descricao: calculoSimples.irpfRestituir >= 0 ? "Imposto a Restituir" : "Imposto a Pagar",
+            }],
+            totalIrpf: calculoSimples.irpfRestituir / 100,
+          };
+        }
+
+        // Salvar no banco de dados (se necessário)
+        const db = await getDb();
+        if (db) {
+          // Salvar o primeiro exercício como registro principal
+          const primeiroExercicio = resultado.exercicios[0];
+          if (primeiroExercicio) {
+            await db.insert(irpfForms).values({
+              nomeCliente: input.nomeCliente,
+              cpf: input.cpf,
+              dataNascimento: input.dataNascimento,
+              email: input.email,
+              telefone: input.telefone,
+              numeroProcesso: input.numeroProcesso,
+              vara: input.vara,
+              comarca: input.comarca,
+              fontePagadora: input.fontePagadora || input.darfs[0]?.fontePagadora || "",
+              cnpj: input.cnpj || input.darfs[0]?.cnpj || "",
+              brutoHomologado: input.brutoHomologado,
+              tributavelHomologado: input.tributavelHomologado,
+              numeroMeses: input.numeroMeses,
+              alvaraValor: input.linhas.reduce((sum, l) => sum + l.valorAlvara, 0),
+              alvaraData: input.linhas[0]?.dataAlvara || "",
+              darfValor: input.darfs.reduce((sum, d) => sum + d.valor, 0),
+              darfData: input.darfs[0]?.data || "",
+              honorariosValor: input.linhas.reduce((sum, l) => sum + (l.valorHonorario || 0), 0),
+              honorariosAno: input.linhas[0]?.anoPagoHonorario?.toString() || new Date().getFullYear().toString(),
+              proporcao: (resultado.proporcaoTributavel * 100).toFixed(4) + "%",
+              rendimentosTributavelAlvara: Math.round(primeiroExercicio.rendimentosTributaveis * 100),
+              rendimentosTributavelHonorarios: 0, // Calculado internamente
+              baseCalculo: Math.round(primeiroExercicio.rendimentosTributaveis * 100),
+              rra: (primeiroExercicio.rendimentosTributaveis / primeiroExercicio.numeroMeses).toFixed(2),
+              irMensal: "0",
+              irDevido: Math.round((primeiroExercicio.irrf - primeiroExercicio.irpf) * 100),
+              irpfRestituir: Math.round(resultado.totalIrpf * 100),
+            });
+          }
+
+          // Notificar proprietário
+          await notifyOwner({
+            title: "Novo Cálculo Externo de IRPF",
+            content: `Cálculo recebido de ${input.nomeCliente} (CPF: ${input.cpf}). ` +
+              `Tipo: ${isMultiplosExercicios ? "Múltiplos Exercícios" : "Exercício Único"}. ` +
+              `Total a restituir: R$ ${resultado.totalIrpf.toFixed(2)}`,
+          });
+        }
+
+        return {
+          success: true,
+          isMultiplosExercicios,
+          anosDetectados: {
+            alvaras: Array.from(anosAlvaras),
+            darfs: Array.from(anosDarfs),
+          },
+          proporcaoTributavel: resultado.proporcaoTributavel,
+          exercicios: resultado.exercicios.map(ex => ({
+            exercicio: ex.exercicio,
+            rendimentosTributaveis: ex.rendimentosTributaveis,
+            irrf: ex.irrf,
+            numeroMeses: ex.numeroMeses,
+            irpf: ex.irpf,
+            descricao: ex.descricao,
+          })),
+          totalIrpf: resultado.totalIrpf,
+          totalIrpfFormatado: `R$ ${resultado.totalIrpf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        };
+      }),
   }),
 
   // ============================================================================
