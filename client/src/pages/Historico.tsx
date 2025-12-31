@@ -118,7 +118,10 @@ export default function Historico() {
 
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
+    const d = new Date(date);
+    const dataStr = d.toLocaleDateString('pt-BR');
+    const horaStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `${dataStr} ${horaStr}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -188,6 +191,7 @@ export default function Historico() {
                 <Loader2 className="h-8 w-8 animate-spin text-green-600" />
               </div>
             ) : forms && forms.length > 0 ? (
+              // Ordenar por nome em ordem alfabética (A-Z)
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -202,7 +206,7 @@ export default function Historico() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {forms.map((form) => (
+                    {[...forms].sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente, 'pt-BR')).map((form) => (
                       <TableRow key={form.id}>
                         <TableCell className="font-medium">{form.nomeCliente}</TableCell>
                         <TableCell>{form.cpf}</TableCell>

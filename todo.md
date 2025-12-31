@@ -119,3 +119,12 @@
 1. Acessar Hostinger e editar o arquivo `/static/js/main.e98210db.js`
 2. Substituir a URL antiga pela nova
 3. Testar preenchendo o formulário no site e verificando se aparece no dashboard
+
+## Melhorias na Página de Histórico (31/12/2024)
+
+- [x] Adicionar hora após a data na coluna Data (ex: 31/12/2025 22:54)
+- [x] Ordenar lista por nome em ordem alfabética (A-Z)
+- [x] Remover texto "LEVANTAMENTO E IMPOSTO RETIDO" do site externo
+- [x] Remover radio buttons "ANOS DIFERENTES" e "MESMO ANO" do site externo
+- [x] Atualizar URL do endpoint no site externo
+- [x] Gerar arquivo ZIP para upload no Hostinger
