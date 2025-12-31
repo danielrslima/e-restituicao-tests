@@ -76,3 +76,7 @@
 - [x] Criar rotas tRPC para geração de PDFs (pdf.esclarecimentos e pdf.planilhaRT)
 - [x] Conectar botões de download existentes às rotas de PDF (página Histórico)
 - [x] Atualizar botão "Exportar PDF" na página Exportar para baixar os dois PDFs
+
+## Correções de PDF (31/12/2024)
+
+- [x] Corrigir cor do cabeçalho do PDF Planilha RT (preto → cinza)

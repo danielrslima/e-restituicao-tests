@@ -121,12 +121,13 @@ export async function generatePlanilhaRTPDF(
       const titleCol2Width = contentWidth * 0.15;
       const titleCol3Width = contentWidth * 0.15;
 
-      // Fundo preto para o título
-      doc.fillColor("#000000")
+      // Fundo cinza para o título (igual aos outros cabeçalhos)
+      doc.fillColor("#e5e7eb")
         .rect(marginLeft, currentY, titleCol1Width, titleHeight)
         .fill();
+      doc.rect(marginLeft, currentY, titleCol1Width, titleHeight).stroke();
       
-      doc.fillColor("#ffffff").fontSize(8).font("Helvetica-Bold")
+      doc.fillColor("#000000").fontSize(8).font("Helvetica-Bold")
         .text(
           "DEMONSTRATIVO DE APURAÇÃO DAS VERBAS TRIBUTÁVEIS",
           marginLeft + 5,
