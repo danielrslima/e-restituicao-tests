@@ -90,7 +90,11 @@
 
 ## Pendências Futuras
 
-- [ ] Integração com site externo restituicaoia.com.br (receber dados via API)
+- [x] Integração com site externo restituicaoia.com.br (receber dados via API)
+  - [x] Analisar formato de dados do site externo (arquivo formulario-externo.ts original)
+  - [x] Criar endpoint público /api/formulario/receber
+  - [ ] Atualizar URL no site externo (Hostinger) para apontar ao novo servidor
+  - [ ] Testar integração completa quando banco de dados estabilizar
 - [ ] Funcionalidade de edição de cálculos existentes
 - [ ] Funcionalidade de exclusão de cálculos
 - [x] Validar PDFs gerados pixel a pixel contra modelos de referência
@@ -100,6 +104,18 @@
 
 ## Informações para Retomada
 
-**Último checkpoint:** e157625e (31/12/2024)
+**Último checkpoint:** 331c91e3 (31/12/2024)
 **Testes:** 26 passando
 **Documentação completa:** DOCUMENTACAO-PROJETO.md
+
+## Integração Site Externo (31/12/2024)
+
+**Endpoint criado:** `/api/formulario/receber`
+**Formato aceito:** JSON com arrays de alvarás, DARFs e honorários
+**URL antiga:** `https://3000-i2r1x5q9skx44agan426j-8549611e.manusvm.computer/api/formulario/receber`
+**URL nova:** `https://3000-iab0rqttzvrkuuia3px9x-1683be43.sg1.manus.computer/api/formulario/receber`
+
+**Para completar a integração:**
+1. Acessar Hostinger e editar o arquivo `/static/js/main.e98210db.js`
+2. Substituir a URL antiga pela nova
+3. Testar preenchendo o formulário no site e verificando se aparece no dashboard
