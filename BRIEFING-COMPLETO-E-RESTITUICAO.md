@@ -124,11 +124,12 @@ Plataforma web para cálculo automático de restituição de IRPF para pessoas q
 ### 3.2 Persistência de Sessão (CRÍTICO!)
 **PROBLEMA IDENTIFICADO:** No sistema atual, se o usuário fechar a página ou perder conexão após o pagamento, não consegue retornar para ver o resultado.
 
-**SOLUÇÃO NECESSÁRIA:**
+**SOLUÇÃO NECESSÁRIA (CRÍTICO - PRIORIDADE MÁXIMA):**
 - Gerar um **código único** ou **link personalizado** para cada cálculo
 - Enviar por **email** após o primeiro pagamento
 - Permitir que o usuário **retorne** a qualquer momento usando esse código/link
 - Armazenar o **status do pagamento** e **resultado do cálculo** no banco de dados
+- **NOTA:** Este foi um problema real identificado durante os testes - o cliente fez o pagamento de R$ 5,99 via PIX no Asaas, mas a página saiu do ar e ele perdeu acesso ao resultado.
 
 ---
 
@@ -284,10 +285,12 @@ ETAPA 10: TOTALIZAÇÃO
 ## 6. INTEGRAÇÕES EXTERNAS
 
 ### 6.1 Asaas (Pagamentos)
+- **STATUS:** JÁ INTEGRADO no sistema atual (restituicaoia.com.br)
 - **Métodos:** PIX e Cartão de Crédito
 - **Valores de teste:** R$ 5,99 e R$ 15,99
 - **Valores de produção:** R$ 29,90 e R$ 2.500,00
 - **Webhook:** Receber confirmação de pagamento
+- **PROBLEMA IDENTIFICADO:** Após o pagamento, a página perde a sessão e o cliente não consegue retornar para ver o resultado. PRECISA implementar persistência de sessão com código único.
 
 ### 6.2 IPCA-E (IBGE)
 - **Fonte:** Instituto Brasileiro de Geografia e Estatística
@@ -403,7 +406,7 @@ notes (
 - [ ] Suporte a até 30 alvarás, DARFs e honorários
 - [ ] Lógica MESMO ANO vs ANOS DIFERENTES
 - [ ] Geração de PDFs (Planilha RT + Esclarecimentos)
-- [ ] Integração com Asaas (pagamentos)
+- [ ] Replicar integração Asaas existente (JÁ FUNCIONA no site atual, só precisa trazer para o novo sistema)
 - [ ] Sistema de código único para retorno do cliente
 - [ ] Agendamento de entrega do Kit IR (8 dias após pagamento)
 - [ ] Formulário externo (página de captura e-restituicao.com.br)
