@@ -93,13 +93,13 @@
 - [ ] Integração com site externo restituicaoia.com.br (receber dados via API)
 - [ ] Funcionalidade de edição de cálculos existentes
 - [ ] Funcionalidade de exclusão de cálculos
-- [ ] Validar PDFs gerados pixel a pixel contra modelos de referência
+- [x] Validar PDFs gerados pixel a pixel contra modelos de referência
 - [ ] Agendamento de emails (7 dias após pagamento)
 - [ ] Gestão de Kit IR (segundo pagamento)
 - [ ] Relatório consolidado de múltiplos clientes
 
 ## Informações para Retomada
 
-**Último checkpoint:** 62e4e704 (31/12/2024)
+**Último checkpoint:** e157625e (31/12/2024)
 **Testes:** 26 passando
 **Documentação completa:** DOCUMENTACAO-PROJETO.md

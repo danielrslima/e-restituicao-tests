@@ -188,6 +188,7 @@ pnpm dev
 | 9bf1926b | 30/12/2024 | Botões de download funcionais |
 | 961628cf | 31/12/2024 | Suporte a múltiplos exercícios nos PDFs |
 | 62e4e704 | 31/12/2024 | Modal de detalhes melhorado |
+| e157625e | 31/12/2024 | Documentação completa para retomada |
 
 ---
 
