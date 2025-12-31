@@ -31,7 +31,15 @@
 - [x] Validar conexão com MySQL/TiDB
 - [x] Testes unitários com Vitest
 
+## Correções do Motor de Cálculo (30/12/2024)
+
+- [x] Corrigir proporção tributável (Tributável Homologado / Bruto Homologado)
+- [x] Corrigir uso de UTC para datas (evitar problemas de fuso horário)
+- [x] Corrigir seleção da tabela de alíquotas baseada na data do DARF (não do exercício)
+- [x] Validar cálculos contra planilha Excel (100% idênticos)
+- [x] Todos os 25 testes passando
+
 ## Status
 
-**Fase atual:** Sistema restaurado e funcional
-**Última atualização:** 2024-12-30 - Todas as funcionalidades principais implementadas
+**Fase atual:** Motor de cálculo corrigido e validado
+**Última atualização:** 2024-12-30 - Motor de cálculo 100% validado contra planilha Excel
