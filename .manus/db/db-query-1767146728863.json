@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, nome_cliente, cpf, irpf_restituir, proporcao, rendimentos_tributavel_alvara, base_calculo, ir_devido FROM irpf_forms WHERE nome_cliente LIKE '%JOSE RAMOS%' OR cpf LIKE '%003.003.987%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT id, nome_cliente, cpf, irpf_restituir, proporcao, rendimentos_tributavel_alvara, base_calculo, ir_devido FROM irpf_forms WHERE nome_cliente LIKE '%JOSE RAMOS%' OR cpf LIKE '%003.003.987%';",
+  "rows": [
+    {
+      "id": "1",
+      "nome_cliente": "JOSE RAMOS CONCEIÇÃO",
+      "cpf": "003.003.987-86",
+      "irpf_restituir": "4720712",
+      "proporcao": "38.9048%",
+      "rendimentos_tributavel_alvara": "90073191",
+      "base_calculo": "63050977",
+      "ir_devido": "17339019"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome_cliente\tcpf\tirpf_restituir\tproporcao\trendimentos_tributavel_alvara\tbase_calculo\tir_devido\n1\tJOSE RAMOS CONCEIÇÃO\t003.003.987-86\t4720712\t38.9048%\t90073191\t63050977\t17339019\n",
+  "stderr": "",
+  "execution_time_ms": 1554
+}

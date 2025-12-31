@@ -23,6 +23,8 @@ import { calcularIRPF as calcularIRPFCompleto, DadosEntrada } from "./services/i
 import { irpfForms } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { notifyOwner } from "./_core/notification";
+import { generateEsclarecimentosPDF, EsclarecimentosData } from "./services/pdfEsclarecimentosService";
+import { generatePlanilhaRTPDF, PlanilhaRTData } from "./services/pdfPlanilhaRTService";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -393,6 +395,129 @@ export const appRouter = router({
           })),
           totalIrpf: resultado.totalIrpf,
           totalIrpfFormatado: `R$ ${resultado.totalIrpf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        };
+      }),
+  }),
+
+  // ============================================================================
+  // Notes Router
+  // ============================================================================
+  // ============================================================================
+  // PDF Generation Router
+  // ============================================================================
+  pdf: router({
+    // Gerar PDF de Esclarecimentos
+    esclarecimentos: protectedProcedure
+      .input(z.object({ formId: z.number(), exercicio: z.number().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const form = await getIrpfFormById(input.formId);
+        if (!form) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Formulário não encontrado' });
+        }
+        if (ctx.user?.role !== 'admin' && form.userId !== ctx.user?.id) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+
+        // Calcular proporção tributável
+        const proporcao = form.tributavelHomologado && form.brutoHomologado 
+          ? form.tributavelHomologado / form.brutoHomologado 
+          : 0;
+
+        // Calcular valores
+        const totalRecebido = form.alvaraValor || 0;
+        const irRetido = form.darfValor || 0;
+        const valorBrutoAcao = totalRecebido + irRetido;
+        const rendimentosTributaveis = form.baseCalculo || 0;
+        const deducoes = Math.round((form.honorariosValor || 0) * proporcao);
+        const rendimentosIsentos = totalRecebido - rendimentosTributaveis;
+
+        const esclarecimentosData: EsclarecimentosData = {
+          nomeCliente: form.nomeCliente || '',
+          cpf: form.cpf || '',
+          dataNascimento: form.dataNascimento || '',
+          numeroProcesso: form.numeroProcesso || '',
+          vara: form.vara || '',
+          comarca: form.comarca || '',
+          fontePagadora: form.fontePagadora || '',
+          cnpj: form.cnpj || '',
+          exercicio: input.exercicio || (form.alvaraData ? new Date(form.alvaraData).getFullYear() + 1 : new Date().getFullYear()),
+          totalRecebido,
+          irRetido,
+          valorBrutoAcao,
+          rendimentosTributaveis,
+          proporcao,
+          deducoes,
+          rendimentosIsentos,
+          meses: form.numeroMeses || 0,
+          inssReclamante: 0,
+        };
+
+        const pdfBuffer = await generateEsclarecimentosPDF(esclarecimentosData);
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `Esclarecimentos-${form.nomeCliente?.replace(/\s+/g, '-')}-${esclarecimentosData.exercicio}.pdf`,
+        };
+      }),
+
+    // Gerar PDF de Planilha RT
+    planilhaRT: protectedProcedure
+      .input(z.object({ formId: z.number(), exercicio: z.number().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const form = await getIrpfFormById(input.formId);
+        if (!form) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Formulário não encontrado' });
+        }
+        if (ctx.user?.role !== 'admin' && form.userId !== ctx.user?.id) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+
+        // Calcular proporção tributável
+        const proporcao = form.tributavelHomologado && form.brutoHomologado 
+          ? form.tributavelHomologado / form.brutoHomologado 
+          : 0;
+
+        // Calcular valores
+        const totalRendimentos = form.alvaraValor || 0;
+        const totalDarf = form.darfValor || 0;
+        const totalCausa = totalRendimentos + totalDarf;
+        const rendimentosTributaveis = form.baseCalculo || 0;
+        const rendimentosIsentos = totalRendimentos - rendimentosTributaveis;
+        const totalDespesas = form.honorariosValor || 0;
+        const proporcaoDespesas = Math.round(totalDespesas * proporcao);
+
+        // Determinar mês do recebimento
+        const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+        const mesRecebimento = form.alvaraData ? meses[new Date(form.alvaraData).getMonth()] : 'DEZEMBRO';
+
+        const planilhaData: PlanilhaRTData = {
+          nomeCliente: form.nomeCliente || '',
+          cpf: form.cpf || '',
+          dataNascimento: form.dataNascimento || '',
+          numeroProcesso: form.numeroProcesso || '',
+          vara: form.vara || '',
+          comarca: form.comarca || '',
+          fontePagadora: form.fontePagadora || '',
+          cnpj: form.cnpj || '',
+          exercicio: input.exercicio || (form.alvaraData ? new Date(form.alvaraData).getFullYear() + 1 : new Date().getFullYear()),
+          mesRecebimento,
+          totalRendimentos,
+          totalDarf,
+          totalCausa,
+          brutoHomologado: form.brutoHomologado || 0,
+          tributaveisHomologado: form.tributavelHomologado || 0,
+          proporcao,
+          rendimentosIsentos,
+          rendimentosTributaveis,
+          totalDespesas,
+          proporcaoDespesas,
+          meses: form.numeroMeses || 0,
+          inssReclamante: 0,
+        };
+
+        const pdfBuffer = await generatePlanilhaRTPDF(planilhaData);
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `PlanilhaRT-${form.nomeCliente?.replace(/\s+/g, '-')}-${planilhaData.exercicio}.pdf`,
         };
       }),
   }),

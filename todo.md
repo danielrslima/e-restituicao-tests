@@ -65,3 +65,13 @@
 - [x] Detectar múltiplos exercícios quando: alvarás em anos diferentes OU DARFs em anos diferentes
 - [x] Criar rota pública `calculoExterno.calcular` para receber dados da página externa
 - [x] Usar motor simples para exercício único, motor completo para múltiplos exercícios
+
+## Geração de PDFs (30/12/2024)
+
+- [x] Analisar PDFs de referência (Esclarecimentos e Planilha RT)
+- [x] Implementar geração do PDF de Esclarecimentos
+- [x] Implementar geração do PDF de Planilha RT
+- [x] Suportar exercício único e múltiplos exercícios
+- [x] Testar com casos Ana Carmen e José Ramos
+- [x] Criar rotas tRPC para geração de PDFs (pdf.esclarecimentos e pdf.planilhaRT)
+- [ ] Adicionar botões de download no dashboard
