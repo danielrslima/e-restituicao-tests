@@ -128,3 +128,17 @@
 - [x] Remover radio buttons "ANOS DIFERENTES" e "MESMO ANO" do site externo
 - [x] Atualizar URL do endpoint no site externo
 - [x] Gerar arquivo ZIP para upload no Hostinger
+
+
+## Próximas Funcionalidades a Implementar (31/12/2024)
+
+- [ ] Funcionalidade de edição de dados - Permitir corrigir dados de cálculos existentes sem criar novo
+- [ ] Ajustar página de impressão - Layout está fora de esquadro, precisa melhorar formatação para A4
+- [ ] Implementar agendamento de emails - Sistema de envio automático de emails
+
+## Correções Site Externo (31/12/2024)
+
+- [x] Corrigir envio do nome completo (userData.nome → userData.nomeCompleto)
+- [x] Corrigir envio dos arrays de alvarás (valueData.alvaraUm → alvaraUm)
+- [x] Corrigir envio dos arrays de DARFs (valueData.darfUm → darfUm)
+- [x] Corrigir envio dos arrays de honorários (valorCalculos.honorariosUm → honorariosUm)

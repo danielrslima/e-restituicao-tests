@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, nome_cliente, cpf, email, irpf_restituir, status_pagamento, created_at FROM irpf_forms WHERE nome_cliente LIKE '%Sidinei%' OR nome_cliente LIKE '%sidinei%' ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT id, nome_cliente, cpf, email, irpf_restituir, status_pagamento, created_at FROM irpf_forms WHERE nome_cliente LIKE '%Sidinei%' OR nome_cliente LIKE '%sidinei%' ORDER BY id DESC LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1492
+}
