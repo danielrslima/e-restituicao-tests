@@ -49,3 +49,11 @@
 - [x] Adicionar campo "Bruto Homologado" no formulário de entrada (já implementado)
 - [x] Adicionar campo "Tributável Homologado" no formulário de entrada (já implementado)
 - [x] Validar que os novos campos são salvos corretamente no banco de dados (já implementado)
+
+## Correção Caso José Ramos (30/12/2024)
+
+- [x] Corrigir cálculo para caso com DARF em ano diferente do alvará
+- [x] Validar resultado: esperado R$ 74.028,67, motor agora calcula corretamente
+- [x] Corrigir função calcularIRPF no db.ts (usada pelo formulário web)
+- [x] Atualizar testes para refletir fórmulas corretas
+- [x] Todos os 26 testes passando

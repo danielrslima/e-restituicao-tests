@@ -435,42 +435,73 @@ export async function upsertSelicRate(data: InsertSelicEntry) {
 // IRPF Calculation Helper
 // ============================================================================
 
+// Tabela de Alíquotas do IRPF (após abril/2023)
+const TABELA_IR: Array<{ min: number; max: number; aliquota: number; deducao: number }> = [
+  { min: 0, max: 211200, aliquota: 0, deducao: 0 },           // R$ 2.112,00 em centavos
+  { min: 211201, max: 282665, aliquota: 0.075, deducao: 15840 },  // R$ 2.826,65
+  { min: 282666, max: 375105, aliquota: 0.15, deducao: 37040 },   // R$ 3.751,05
+  { min: 375106, max: 466468, aliquota: 0.225, deducao: 65173 },  // R$ 4.664,68
+  { min: 466469, max: Infinity, aliquota: 0.275, deducao: 88496 }, // Acima
+];
+
 /**
  * Calcular valores de IRPF com base nos dados fornecidos
+ * FÓRMULAS CORRETAS baseadas na planilha Excel:
+ * 
+ * 1. Proporção Tributável = Tributável Homologado / Bruto Homologado
+ * 2. RT Alvará = (Alvará + DARF) × Proporção Tributável
+ * 3. RT Honorários = Honorários × Proporção Tributável
+ * 4. Base de Cálculo = RT Alvará - RT Honorários (mínimo 0)
+ * 5. RRA = Base de Cálculo / Número de Meses
+ * 6. IR Devido = (Alíquota × RRA - Dedução) × Número de Meses
+ * 7. IRPF = DARF - IR Devido
  */
 export function calcularIRPF(data: {
-  brutoHomologado: number;
-  tributavelHomologado: number;
+  brutoHomologado: number;  // em centavos
+  tributavelHomologado: number;  // em centavos
   numeroMeses: number;
-  alvaraValor: number;
-  darfValor: number;
-  honorariosValor: number;
+  alvaraValor: number;  // em centavos
+  darfValor: number;  // em centavos
+  honorariosValor: number;  // em centavos
 }) {
-  // Proporção de rendimentos tributáveis
-  const proporcaoNum = data.tributavelHomologado / data.brutoHomologado;
+  // 1. Proporção de rendimentos tributáveis
+  const proporcaoNum = data.brutoHomologado > 0 
+    ? data.tributavelHomologado / data.brutoHomologado 
+    : 0;
   const proporcao = (proporcaoNum * 100).toFixed(4) + '%';
 
-  // Rendimentos tributáveis do alvará
-  const rendimentosTributavelAlvara = Math.round(data.alvaraValor * proporcaoNum);
+  // 2. Rendimentos tributáveis do alvará = (Alvará + DARF) × Proporção
+  const rendimentosTributavelAlvara = Math.round((data.alvaraValor + data.darfValor) * proporcaoNum);
 
-  // Rendimentos tributáveis dos honorários
+  // 3. Rendimentos tributáveis dos honorários = Honorários × Proporção
   const rendimentosTributavelHonorarios = Math.round(data.honorariosValor * proporcaoNum);
 
-  // Base de cálculo
-  const baseCalculo = rendimentosTributavelAlvara - rendimentosTributavelHonorarios;
+  // 4. Base de cálculo = RT Alvará - RT Honorários (mínimo 0)
+  const baseCalculo = Math.max(0, rendimentosTributavelAlvara - rendimentosTributavelHonorarios);
 
-  // RRA (Rendimento Recebido Acumuladamente) - valor mensal
-  const rraNum = baseCalculo / data.numeroMeses;
-  const rra = (rraNum / 100).toFixed(2);
+  // 5. RRA (Rendimento Recebido Acumuladamente) - valor mensal em centavos
+  const rraNum = data.numeroMeses > 0 ? baseCalculo / data.numeroMeses : 0;
+  const rra = (rraNum / 100).toFixed(2);  // Formata para exibição em reais
 
-  // IR Mensal (usando alíquota simplificada de 27.5% para valores altos)
-  const irMensalNum = rraNum * 0.275;
-  const irMensal = (irMensalNum / 100).toFixed(2);
+  // 6. Encontrar a faixa de alíquota correta
+  let aliquota = 0;
+  let deducao = 0;
+  for (const faixa of TABELA_IR) {
+    if (rraNum >= faixa.min && (faixa.max === Infinity || rraNum <= faixa.max)) {
+      aliquota = faixa.aliquota;
+      deducao = faixa.deducao;
+      break;
+    }
+  }
 
-  // IR Devido total
-  const irDevido = Math.round(baseCalculo * 0.275);
+  // 7. IR Mensal = (Alíquota × RRA) - Dedução
+  const irMensalNum = Math.max(0, (aliquota * rraNum) - deducao);
+  const irMensal = (irMensalNum / 100).toFixed(2);  // Formata para exibição em reais
 
-  // IRPF a Restituir
+  // 8. IR Devido = IR Mensal × Número de Meses
+  const irDevido = Math.round(irMensalNum * data.numeroMeses);
+
+  // 9. IRPF a Restituir = DARF - IR Devido
   const irpfRestituir = data.darfValor - irDevido;
 
   return {
