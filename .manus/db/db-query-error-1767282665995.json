@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, nome_cliente, bruto_homologado, tributavel_homologado, valor_alvara, valor_darf, valor_honorarios, proporcao, base_calculo, ir_devido, irpf_restituir FROM irpf_forms WHERE nome_cliente LIKE '%ANA CARMEN%' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT id, nome_cliente, bruto_homologado, tributavel_homologado, valor_alvara, valor_darf, valor_honorarios, proporcao, base_calculo, ir_devido, irpf_restituir FROM irpf_forms WHERE nome_cliente LIKE '%ANA CARMEN%' LIMIT 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'valor_alvara' in 'field list'"
+  ]
+}

@@ -11,6 +11,7 @@ import Exportar from "./pages/Exportar";
 import Notificacoes from "./pages/Notificacoes";
 import Configuracoes from "./pages/Configuracoes";
 import Usuarios from "./pages/Usuarios";
+import ImprimirRelatorio from "./pages/ImprimirRelatorio";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/notificacoes" component={Notificacoes} />
       <Route path="/configuracoes" component={Configuracoes} />
       <Route path="/usuarios" component={Usuarios} />
+      <Route path="/imprimir/:id" component={ImprimirRelatorio} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

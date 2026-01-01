@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Search, FileText, Download, Eye, Loader2, Printer, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -185,8 +186,13 @@ export default function Historico() {
     planilhaRTMutation.mutate({ formId, exercicio });
   };
 
+  const [, setLocation] = useLocation();
+
   const handlePrint = () => {
-    window.print();
+    if (selectedForm) {
+      // Abre a página de impressão dedicada em nova aba
+      window.open(`/imprimir/${selectedForm}`, '_blank');
+    }
   };
 
   const handleEdit = (form: any) => {
@@ -445,16 +451,16 @@ export default function Historico() {
 
         {/* Modal de Detalhes */}
         <Dialog open={!!selectedForm} onOpenChange={() => setSelectedForm(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
             <DialogHeader className="print:mb-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <DialogTitle>Detalhes do Cálculo</DialogTitle>
                   <DialogDescription>
                     Informações completas do cálculo de restituição
                   </DialogDescription>
                 </div>
-                <div className="flex gap-2 print:hidden">
+                <div className="flex flex-wrap gap-2 print:hidden">
                   {canEdit && formDetails && (
                     <Button
                       variant="outline"
@@ -1031,13 +1037,14 @@ export default function Historico() {
         @media print {
           @page {
             size: A4;
-            margin: 0;
+            margin: 10mm 15mm;
           }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background: white !important;
           }
           body * {
             visibility: hidden;
@@ -1046,14 +1053,18 @@ export default function Historico() {
             visibility: visible;
           }
           #print-content {
-            position: fixed;
-            left: 10mm;
-            top: 10mm;
-            right: 10mm;
-            width: auto;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
             padding: 0;
             font-size: 10pt;
             line-height: 1.4;
+            background: white;
+          }
+          #print-content .hidden.print\:block {
+            display: block !important;
+            visibility: visible !important;
           }
           #print-content > div {
             border: 1px solid #e5e7eb;

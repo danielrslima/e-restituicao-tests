@@ -162,8 +162,9 @@
 ## Pendências para Próxima Sessão (01/01/2025)
 
 ### Correções Urgentes
-- [ ] Corrigir página de impressão - Conteúdo está iniciando no meio da folha A4
-- [ ] Corrigir impressão para mostrar todas as seções (Resultados por Exercício não está aparecendo)
+- [x] Corrigir página de impressão - Valores estavam multiplicados por 100 (corrigido formatCurrency)
+- [x] Corrigir modal de detalhes - Botão Imprimir estava cortado (ampliado modal para max-w-3xl)
+- [x] Corrigir impressão para mostrar todas as seções (Resultados por Exercício agora aparece)
 
 ### Integrações (conforme instruções do projeto)
 - [ ] Agendamento de emails - Sistema de envio automático 7 dias após pagamento
@@ -176,4 +177,20 @@
 - [ ] Fazer upload dos arquivos para o servidor
 - [ ] Configurar domínio/subdomínio para o dashboard
 - [ ] Testar integração completa site → dashboard
+
+
+### Sistema de Autenticação Próprio
+- [ ] Implementar sistema de senha para usuários (não depender do Manus OAuth)
+- [ ] Criar funcionalidade "Esqueci minha senha" com envio de email
+- [ ] Permitir que admin defina/resete senhas dos usuários
+
+
+### Kit IR Completo (Nova Funcionalidade)
+- [ ] Criar encartes/capas separadoras (ESCLARECIMENTOS, CÁLCULOS HOMOLOGADOS, etc.)
+- [ ] Interface para upload de documentos do processo (planilhas, alvarás, sentenças)
+- [ ] Armazenamento de documentos no S3
+- [ ] Geração de PDF com encartes personalizados
+- [ ] Mesclagem de PDFs (encartes + documentos anexados)
+- [ ] Organização do Kit IR na ordem correta
+- [ ] Download do Kit IR completo em um único PDF
 
