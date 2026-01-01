@@ -62,6 +62,11 @@ export default function ImprimirRelatorio() {
     }
   }
 
+  // Calcular o total correto somando os valores dos exercícios (quando existirem)
+  const irpfRestituirTotal = resultadosExercicio.length > 0
+    ? resultadosExercicio.reduce((soma, r) => soma + r.irpfRestituir, 0)
+    : (formDetails.irpfRestituir || 0);
+
   return (
     <>
       <style>{`
@@ -412,7 +417,9 @@ export default function ImprimirRelatorio() {
               </div>
               <div className="field">
                 <div className="field-label">IRPF a Restituir</div>
-                <div className="field-value result-highlight">{formatCurrency(formDetails.irpfRestituir)}</div>
+                <div className="field-value result-highlight" style={{ color: irpfRestituirTotal >= 0 ? '#15803d' : '#dc2626' }}>
+                  {formatCurrency(irpfRestituirTotal)}
+                </div>
               </div>
             </div>
           </div>

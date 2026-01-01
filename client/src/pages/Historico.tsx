@@ -290,6 +290,25 @@ export default function Historico() {
   const exercicios = formDetails ? getExercicios() : [];
   const isMultipleExercicios = exercicios.length > 1;
 
+  // Calcular o total correto somando os valores dos exercícios (quando existirem)
+  const getIrpfRestituirTotal = (): number => {
+    if (!formDetails?.resultadosPorExercicio) {
+      return formDetails?.irpfRestituir || 0;
+    }
+    try {
+      const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+      if (resultados.length > 0) {
+        // Somar os valores de irpfRestituir de todos os exercícios
+        return resultados.reduce((soma, r) => soma + r.irpfRestituir, 0);
+      }
+      return formDetails?.irpfRestituir || 0;
+    } catch {
+      return formDetails?.irpfRestituir || 0;
+    }
+  };
+
+  const irpfRestituirTotal = formDetails ? getIrpfRestituirTotal() : 0;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -619,8 +638,8 @@ export default function Historico() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">IRPF a Restituir</p>
-                      <p className="font-bold text-green-700 text-lg">
-                        {formatCurrency(formDetails.irpfRestituir)}
+                      <p className={`font-bold text-lg ${irpfRestituirTotal >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                        {formatCurrency(irpfRestituirTotal)}
                       </p>
                     </div>
                   </div>
