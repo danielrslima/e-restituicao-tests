@@ -1,0 +1,8 @@
+{
+  "query": "SELECT nome, cpf, dataNascimento, email, numeroProcesso, vara, comarca, fontePagadora, cnpj, brutoHomologado, tributavelHomologado, numeroMeses, valorAlvara, darfIrRetido, honorarios, irpfRestituir, resultadosPorExercicio FROM irpf_calculos WHERE nome LIKE '%ANA CARMEN%' LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT nome, cpf, dataNascimento, email, numeroProcesso, vara, comarca, fontePagadora, cnpj, brutoHomologado, tributavelHomologado, numeroMeses, valorAlvara, darfIrRetido, honorarios, irpfRestituir, resultadosPorExercicio FROM irpf_calculos WHERE nome LIKE '%ANA CARMEN%' LIMIT 1",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'f9fu4fvmnumb4pwny4h8mh.irpf_calculos' doesn't exist"
+  ]
+}

@@ -242,6 +242,22 @@ export default function Historico() {
     }).format(value / 100);
   };
 
+  // Função helper para calcular o valor correto de restituição para cada registro na lista
+  const calcularRestituicaoTotal = (form: { irpfRestituir: number; resultadosPorExercicio?: string | null }): number => {
+    if (!form.resultadosPorExercicio) {
+      return form.irpfRestituir || 0;
+    }
+    try {
+      const resultados: ResultadoExercicio[] = JSON.parse(form.resultadosPorExercicio);
+      if (resultados.length > 0) {
+        return resultados.reduce((soma, r) => soma + r.irpfRestituir, 0);
+      }
+      return form.irpfRestituir || 0;
+    } catch {
+      return form.irpfRestituir || 0;
+    }
+  };
+
   const formatCurrencyInput = (value: number) => {
     return (value / 100).toFixed(2);
   };
