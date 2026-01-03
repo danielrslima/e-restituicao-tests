@@ -194,3 +194,31 @@
 - [ ] Organização do Kit IR na ordem correta
 - [ ] Download do Kit IR completo em um único PDF
 
+
+
+## 🔴 Problemas Encontrados Nesta Sessão (02/01/2026)
+
+- [ ] **Login com email/senha não funciona** - Redireciona para projeto migrado (restdash-f9fu4fvm.manus.space)
+  - Causa: Configuração de OAuth ou rota apontando para domínio errado
+  - Solução: Verificar variáveis de ambiente e rotas de autenticação
+  
+- [ ] **Email aparece duplicado na página de login** - Label mostra o email abaixo do campo
+  - Causa: Problema no componente Login.tsx
+  - Solução: Remover label duplicado ou ajustar CSS
+
+- [ ] **Campo de senha não aparece na lista de elementos do navegador**
+  - Causa: Estrutura do HTML com position:relative
+  - Solução: Simplificar estrutura do componente
+
+## ✅ Implementações Desta Sessão (02/01/2026)
+
+- [x] Somatória no histórico corrigida (usar calcularRestituicaoTotal)
+- [x] Campo passwordHash adicionado ao schema
+- [x] Serviço de autenticação criado (authService.ts)
+- [x] Procedimento loginWithPassword adicionado ao tRPC
+- [x] Procedimento register adicionado ao tRPC
+- [x] Página de login/registro criada (Login.tsx)
+- [x] Ícone de olho para mostrar/ocultar senha
+- [x] Conta de admin criada no banco (daniel@ir360.com.br)
+- [x] Rota /login adicionada ao App.tsx
+- [x] Import de useState corrigido no Login.tsx
