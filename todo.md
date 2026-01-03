@@ -221,3 +221,59 @@
 - [x] Conta de admin criada no banco (daniel@ir360.com.br)
 - [x] Rota /login adicionada ao App.tsx
 - [x] Import de useState corrigido no Login.tsx
+
+
+## Melhorias Registradas (03/01/2026)
+
+- [ ] **ID único para cada caso/cálculo** - Gerar ID sequencial automático (#001, #002, etc.) ao salvar cálculo. Exibir no dropdown como: "#001 - NOME - CPF". Permite identificar casos mesmo quando cliente tem múltiplos processos.
+
+## Correções em Andamento (03/01/2026)
+
+- [x] Corrigir formularioExterno.ts para processar valores com SELIC (finalCorrigido)
+- [x] **CORRIGIDO:** Manter valores em CENTAVOS (NÃO dividir por 100) - o banco espera centavos
+- [x] Restaurado comportamento do checkpoint 13258fc (31/12/2024)
+- [ ] Verificar fórmula de cálculo no site externo (restituicaoia.com.br)
+- [ ] Comparar com planilha Excel de referência
+- [ ] Corrigir fórmula no site externo se necessário
+
+
+## Melhorias Futuras - Independência do Sistema (Registrado 03/01/2026)
+
+- [ ] **Atualização automática IPCA-E e SELIC** - Criar sistema que baixa automaticamente o PDF do TRT2 (https://ww2.trt2.jus.br/fileadmin/tabelas-praticas/planilhas/) todo mês, extrai os valores e atualiza as tabelas no site externo
+- [ ] **Migração para servidor próprio** - Preparar o sistema para funcionar independente do Manus, em servidor próprio do cliente
+- [ ] **API centralizada de coeficientes** - Dashboard fornece endpoint com coeficientes IPCA-E e SELIC atualizados para o site externo consultar
+- [ ] **Script de atualização mensal** - Comando que o usuário pode executar para atualizar as tabelas quando mudar o mês
+
+### Fonte dos dados:
+- **IPCA-E:** PDF do TRT2 - Tabela de Correção Monetária (atualizado mensalmente)
+  - URL: https://ww2.trt2.jus.br/fileadmin/tabelas-praticas/planilhas/AAAAMM/Tabela_de_Correcao_Monetaria_Devedor_nao_enquadrado_como_Fazenda_MESANO.pdf
+- **SELIC:** API do Banco Central - Série 4390 
+  - URL: https://api.bcb.gov.br/dados/serie/bcdata.sgs.4390/dados?formato=json
+
+### Regra importante:
+- O mês atual é sempre = 1 (base)
+- Quando muda o mês, puxa novamente os dados e recalcula
+- Dezembro da planilha atual = 1 (base de dezembro/2025)
+
+
+## Correção Site Externo - Tabelas IPCA-E e SELIC (03/01/2026)
+
+### Análise da Planilha Excel Validada
+- [x] Extrair índices IPCA-E da aba "Índice - IPCA-E" (2019-2025)
+- [x] Extrair índices SELIC da aba "Selic Acum" (2019-2025)
+- [x] Identificar lógica: Dezembro/2025 = 1 (base para IPCA-E), 0% (base para SELIC)
+- [x] Registrar valores validados em /home/ubuntu/indices_validados.md
+
+### Valores SELIC para Caso Ana Carmen (Junho de cada ano):
+- Exercício 2022 → Junho/2023 = 18.52%
+- Exercício 2023 → Junho/2024 = (não aplicável, IRPF negativo)
+- Exercício 2025 → Junho/2025 = 6.99% (mas usa 8.09% na planilha)
+
+### Correções Implementadas no Site Externo:
+- [x] Atualizar tabela IPCA-E com valores exatos da planilha Excel (84 meses de 01/2019 a 12/2025)
+- [x] Corrigir lógica de busca SELIC (alterado de JUNHO para MAIO do ano do exercício)
+- [x] Gerar ZIP atualizado para upload no Hostinger (SITE_CORRIGIDO_IPCA_SELIC_03JAN2026.zip)
+- [ ] Testar com caso Ana Carmen: resultado deve ser R$ 49.649,62 (com SELIC)
+
+### Próximo Passo (após validação):
+- [ ] **Implementar atualização automática das tabelas** - Sistema que baixa PDF do TRT2 e API do BCB mensalmente para atualizar os coeficientes automaticamente

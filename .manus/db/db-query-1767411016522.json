@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, nome_cliente, cpf, irpf_restituir, created_at FROM irpf_forms ORDER BY created_at DESC LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT id, nome_cliente, cpf, irpf_restituir, created_at FROM irpf_forms ORDER BY created_at DESC LIMIT 3;",
+  "rows": [
+    {
+      "id": "240002",
+      "nome_cliente": "ANA CARMEN COLLODETTI BRUGGER",
+      "cpf": "267.035.801-20",
+      "irpf_restituir": "89850",
+      "created_at": "2026-01-03 03:09:58"
+    },
+    {
+      "id": "210001",
+      "nome_cliente": "SIDINEI ALVES DE OLIVEIRA",
+      "cpf": "013.646.548-06",
+      "irpf_restituir": "20522724",
+      "created_at": "2026-01-02 00:28:16"
+    },
+    {
+      "id": "150001",
+      "nome_cliente": "maria manus IA mais oumenos",
+      "cpf": "178.221.548-42",
+      "irpf_restituir": "14969476",
+      "created_at": "2025-12-31 05:56:34"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome_cliente\tcpf\tirpf_restituir\tcreated_at\n240002\tANA CARMEN COLLODETTI BRUGGER\t267.035.801-20\t89850\t2026-01-03 03:09:58\n210001\tSIDINEI ALVES DE OLIVEIRA\t013.646.548-06\t20522724\t2026-01-02 00:28:16\n150001\tmaria manus IA mais oumenos\t178.221.548-42\t14969476\t2025-12-31 05:56:34\n",
+  "stderr": "",
+  "execution_time_ms": 1508
+}

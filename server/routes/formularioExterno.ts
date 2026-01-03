@@ -288,18 +288,64 @@ router.post("/receber", async (req: Request, res: Response) => {
     const irMensal = payload.irMensal || valorCalculos.irMensal || '';
     const irDevido = payload.irDevido || valorCalculos.irDevido || 0;
     // IRPF a Restituir: primeiro do payload, depois de valorCalculos, depois soma dos irpfUm..irpfDez
-    let irpfRestituir = payload.irpfRestituir || valorCalculos.irpfRestituir || 0;
-    // Se ainda zero, tentar somar os campos individuais irpfUm, irpfDois, etc.
+    // IRPF a Restituir: valores em CENTAVOS (NÃO dividir por 100)
+    // O banco de dados espera valores em centavos
+    let irpfRestituir = 0;
+    
+    // Array para armazenar os resultados por exercício (valores em centavos)
+    const resultadosPorExercicioArray: Array<{ano: number; irpfRestituir: number; selicAplicada: number}> = [];
+    
+    // Primeiro tentar usar os campos finalCorrigido (valores com SELIC aplicada)
+    const finalFields = ['finalUmCorrigido', 'finalDoisCorrigido', 'finalTresCorrigido', 'finalQuatroCorrigido', 
+                         'finalCincoCorrigido', 'finalSeisCorrigido', 'finalSeteCorrigido', 'finalOitoCorrigido',
+                         'finalNoveCorrigido', 'finalDezCorrigido'];
+    const selicFields = ['selicUm', 'selicDois', 'selicTres', 'selicQuatro', 'selicCinco',
+                         'selicSeis', 'selicSete', 'selicOito', 'selicNove', 'selicDez'];
+    
+    // Anos base para cada exercício (aproximado baseado na posição)
+    const anosBase = [2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030];
+    
+    for (let i = 0; i < finalFields.length; i++) {
+      const val = valorCalculos[finalFields[i]];
+      const selic = valorCalculos[selicFields[i]] || 0;
+      if (val && typeof val === 'number' && val !== 0) {
+        // Valores JÁ em centavos - NÃO dividir por 100
+        irpfRestituir += val;
+        resultadosPorExercicioArray.push({
+          ano: anosBase[i],
+          irpfRestituir: val,  // Manter em centavos
+          selicAplicada: selic
+        });
+        console.log(`[Formulário Externo] ${finalFields[i]}: ${val} centavos = R$ ${(val / 100).toFixed(2)}`);
+      }
+    }
+    
+    // Se não encontrou valores em finalCorrigido, tentar irpfUm, irpfDois, etc.
     if (irpfRestituir === 0) {
       const irpfFields = ['irpfUm', 'irpfDois', 'irpfTres', 'irpfQuatro', 'irpfCinco', 
                           'irpfSeis', 'irpfSete', 'irpfOito', 'irpfNove', 'irpfDez'];
-      for (const field of irpfFields) {
-        const val = valorCalculos[field];
-        if (val && typeof val === 'number') {
+      for (let i = 0; i < irpfFields.length; i++) {
+        const val = valorCalculos[irpfFields[i]];
+        const selic = valorCalculos[selicFields[i]] || 0;
+        if (val && typeof val === 'number' && val !== 0) {
+          // Valores JÁ em centavos - NÃO dividir por 100
           irpfRestituir += val;
+          resultadosPorExercicioArray.push({
+            ano: anosBase[i],
+            irpfRestituir: val,  // Manter em centavos
+            selicAplicada: selic
+          });
         }
       }
     }
+    
+    // Se ainda zero, tentar o valor direto do payload (também em centavos)
+    if (irpfRestituir === 0 && (payload.irpfRestituir || valorCalculos.irpfRestituir)) {
+      irpfRestituir = payload.irpfRestituir || valorCalculos.irpfRestituir || 0;
+    }
+    
+    console.log('[Formulário Externo] Total IRPF a Restituir (com SELIC):', irpfRestituir);
+    console.log('[Formulário Externo] Exercícios encontrados:', resultadosPorExercicioArray.length);
 
     console.log('[Formulário Externo] Valores calculados extraídos:');
     console.log('  - Proporção:', proporcao);
@@ -324,6 +370,7 @@ router.post("/receber", async (req: Request, res: Response) => {
       pdfs: payload.pdfs,
       exercicios: payload.exercicios,
       idApp: payload.idApp,
+      resultadosPorExercicio: resultadosPorExercicioArray, // Array com valores por exercício (com SELIC)
     };
 
     // Inserir novo formulário com TODOS os dados extraídos
