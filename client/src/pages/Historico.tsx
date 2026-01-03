@@ -55,9 +55,12 @@ import {
 interface ResultadoExercicio {
   exercicio: number;
   irpfRestituir: number;
-  rendimentosTributaveis: number;
-  irRetido: number;
-  meses: number;
+  rendimentosTributaveis?: number;
+  irRetido?: number;
+  meses?: number;
+  // Campos alternativos do site externo
+  ano?: number;
+  selicAplicada?: number;
 }
 
 interface FormData {
@@ -293,9 +296,28 @@ export default function Historico() {
       return [exercicioDefault];
     }
     try {
-      const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
-      return resultados.map(r => r.exercicio).sort((a, b) => a - b);
-    } catch {
+      const parsed = JSON.parse(formDetails.resultadosPorExercicio);
+      
+      // O campo pode ser um array direto ou estar dentro de dadosExtras.resultadosPorExercicio
+      let resultados: ResultadoExercicio[] = [];
+      
+      if (Array.isArray(parsed)) {
+        resultados = parsed;
+      } else if (parsed.resultadosPorExercicio && Array.isArray(parsed.resultadosPorExercicio)) {
+        resultados = parsed.resultadosPorExercicio;
+      }
+      
+      if (resultados.length === 0) {
+        const exercicioDefault = formDetails?.alvaraData 
+          ? new Date(formDetails.alvaraData).getFullYear() + 1 
+          : new Date().getFullYear();
+        return [exercicioDefault];
+      }
+      
+      // Aceitar tanto 'exercicio' quanto 'ano' como campo do exercício
+      return resultados.map(r => r.exercicio || r.ano || 0).filter(e => e > 0).sort((a, b) => a - b);
+    } catch (e) {
+      console.error('Erro ao parsear resultadosPorExercicio:', e);
       const exercicioDefault = formDetails?.alvaraData 
         ? new Date(formDetails.alvaraData).getFullYear() + 1 
         : new Date().getFullYear();
@@ -312,10 +334,20 @@ export default function Historico() {
       return formDetails?.irpfRestituir || 0;
     }
     try {
-      const resultados: ResultadoExercicio[] = JSON.parse(formDetails.resultadosPorExercicio);
+      const parsed = JSON.parse(formDetails.resultadosPorExercicio);
+      
+      // O campo pode ser um array direto ou estar dentro de dadosExtras.resultadosPorExercicio
+      let resultados: ResultadoExercicio[] = [];
+      
+      if (Array.isArray(parsed)) {
+        resultados = parsed;
+      } else if (parsed.resultadosPorExercicio && Array.isArray(parsed.resultadosPorExercicio)) {
+        resultados = parsed.resultadosPorExercicio;
+      }
+      
       if (resultados.length > 0) {
-        // Somar os valores de irpfRestituir de todos os exercícios
-        return resultados.reduce((soma, r) => soma + r.irpfRestituir, 0);
+        // Somar os valores de irpfRestituir de todos os exercícios (incluindo negativos)
+        return resultados.reduce((soma, r) => soma + (r.irpfRestituir || 0), 0);
       }
       return formDetails?.irpfRestituir || 0;
     } catch {

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT \n  id,\n  nome_cliente,\n  total_irpf,\n  total_atualizado,\n  created_at,\n  bruto_homologado,\n  tributavel_homologado,\n  numero_meses\nFROM calculos \nWHERE cpf = '267.035.801-20'\nAND nome_cliente LIKE '%ANA%'\nORDER BY created_at DESC\nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT \n  id,\n  nome_cliente,\n  total_irpf,\n  total_atualizado,\n  created_at,\n  bruto_homologado,\n  tributavel_homologado,\n  numero_meses\nFROM calculos \nWHERE cpf = '267.035.801-20'\nAND nome_cliente LIKE '%ANA%'\nORDER BY created_at DESC\nLIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'f9fu4fvmnumb4pwny4h8mh.calculos' doesn't exist"
+  ]
+}

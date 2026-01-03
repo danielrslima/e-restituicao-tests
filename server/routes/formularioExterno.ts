@@ -80,6 +80,9 @@ interface FormularioExternoPayload {
   pdfs?: Array<{ nome: string; url: string }>;
   exercicios?: Array<any>; // Array de dados por exercício fiscal
   
+  // Campo enviado pelo site externo com resultados por exercício
+  resultadosPorExercicio?: string | Array<{exercicio: number; irpfRestituir: number}>;
+  
   // ID do app (para referência)
   idApp?: string;
 }
@@ -287,59 +290,97 @@ router.post("/receber", async (req: Request, res: Response) => {
     const rra = payload.rra || valorCalculos.rra || '';
     const irMensal = payload.irMensal || valorCalculos.irMensal || '';
     const irDevido = payload.irDevido || valorCalculos.irDevido || 0;
-    // IRPF a Restituir: primeiro do payload, depois de valorCalculos, depois soma dos irpfUm..irpfDez
-    // IRPF a Restituir: valores em CENTAVOS (NÃO dividir por 100)
+    // IRPF a Restituir: valores em CENTAVOS
     // O banco de dados espera valores em centavos
     let irpfRestituir = 0;
     
-    // Array para armazenar os resultados por exercício (valores em centavos)
-    const resultadosPorExercicioArray: Array<{ano: number; irpfRestituir: number; selicAplicada: number}> = [];
+    // Array para armazenar os resultados por exercício
+    let resultadosPorExercicioArray: Array<{exercicio: number; irpfRestituir: number}> = [];
     
-    // Primeiro tentar usar os campos finalCorrigido (valores com SELIC aplicada)
-    const finalFields = ['finalUmCorrigido', 'finalDoisCorrigido', 'finalTresCorrigido', 'finalQuatroCorrigido', 
-                         'finalCincoCorrigido', 'finalSeisCorrigido', 'finalSeteCorrigido', 'finalOitoCorrigido',
-                         'finalNoveCorrigido', 'finalDezCorrigido'];
-    const selicFields = ['selicUm', 'selicDois', 'selicTres', 'selicQuatro', 'selicCinco',
-                         'selicSeis', 'selicSete', 'selicOito', 'selicNove', 'selicDez'];
-    
-    // Anos base para cada exercício (aproximado baseado na posição)
-    const anosBase = [2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030];
-    
-    for (let i = 0; i < finalFields.length; i++) {
-      const val = valorCalculos[finalFields[i]];
-      const selic = valorCalculos[selicFields[i]] || 0;
-      if (val && typeof val === 'number' && val !== 0) {
-        // Valores JÁ em centavos - NÃO dividir por 100
-        irpfRestituir += val;
-        resultadosPorExercicioArray.push({
-          ano: anosBase[i],
-          irpfRestituir: val,  // Manter em centavos
-          selicAplicada: selic
-        });
-        console.log(`[Formulário Externo] ${finalFields[i]}: ${val} centavos = R$ ${(val / 100).toFixed(2)}`);
+    // PRIMEIRO: Tentar usar o campo resultadosPorExercicio enviado diretamente pelo site
+    if (payload.resultadosPorExercicio) {
+      console.log('[Formulário Externo] Usando resultadosPorExercicio do payload');
+      
+      // Pode vir como string JSON ou como array
+      let resultadosArray: Array<{exercicio: number; irpfRestituir: number}> = [];
+      if (typeof payload.resultadosPorExercicio === 'string') {
+        try {
+          resultadosArray = JSON.parse(payload.resultadosPorExercicio);
+        } catch (e) {
+          console.error('[Formulário Externo] Erro ao parsear resultadosPorExercicio:', e);
+        }
+      } else if (Array.isArray(payload.resultadosPorExercicio)) {
+        resultadosArray = payload.resultadosPorExercicio;
       }
+      
+      // Processar cada exercício
+      for (const resultado of resultadosArray) {
+        if (resultado && resultado.exercicio && typeof resultado.irpfRestituir === 'number') {
+          // Valores já estão em centavos (multiplicados por 100 no site)
+          // Converter para centavos se necessário (valores > 100000 provavelmente já estão em centavos)
+          let valorCentavos = resultado.irpfRestituir;
+          if (Math.abs(valorCentavos) < 100000) {
+            // Valor parece estar em reais, converter para centavos
+            valorCentavos = Math.round(valorCentavos * 100);
+          }
+          
+          irpfRestituir += valorCentavos;
+          resultadosPorExercicioArray.push({
+            exercicio: resultado.exercicio,
+            irpfRestituir: valorCentavos
+          });
+          console.log(`[Formulário Externo] Exercício ${resultado.exercicio}: ${valorCentavos} centavos = R$ ${(valorCentavos / 100).toFixed(2)}`);
+        }
+      }
+      
+      console.log('[Formulário Externo] Total de exercícios processados:', resultadosPorExercicioArray.length);
+      console.log('[Formulário Externo] Somatória IRPF (incluindo negativos):', irpfRestituir, 'centavos =', (irpfRestituir / 100).toFixed(2));
     }
     
-    // Se não encontrou valores em finalCorrigido, tentar irpfUm, irpfDois, etc.
-    if (irpfRestituir === 0) {
-      const irpfFields = ['irpfUm', 'irpfDois', 'irpfTres', 'irpfQuatro', 'irpfCinco', 
-                          'irpfSeis', 'irpfSete', 'irpfOito', 'irpfNove', 'irpfDez'];
-      for (let i = 0; i < irpfFields.length; i++) {
-        const val = valorCalculos[irpfFields[i]];
-        const selic = valorCalculos[selicFields[i]] || 0;
+    // SEGUNDO: Se não veio resultadosPorExercicio, tentar extrair de valorCalculos
+    if (resultadosPorExercicioArray.length === 0) {
+      console.log('[Formulário Externo] resultadosPorExercicio não encontrado, tentando valorCalculos...');
+      
+      const finalFields = ['finalUmCorrigido', 'finalDoisCorrigido', 'finalTresCorrigido', 'finalQuatroCorrigido', 
+                           'finalCincoCorrigido', 'finalSeisCorrigido', 'finalSeteCorrigido', 'finalOitoCorrigido',
+                           'finalNoveCorrigido', 'finalDezCorrigido'];
+      const anosBase = [2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030];
+      
+      for (let i = 0; i < finalFields.length; i++) {
+        const val = valorCalculos[finalFields[i]];
         if (val && typeof val === 'number' && val !== 0) {
-          // Valores JÁ em centavos - NÃO dividir por 100
           irpfRestituir += val;
           resultadosPorExercicioArray.push({
-            ano: anosBase[i],
-            irpfRestituir: val,  // Manter em centavos
-            selicAplicada: selic
+            exercicio: anosBase[i],
+            irpfRestituir: val
           });
+        }
+      }
+      
+      // Se ainda não encontrou, tentar irpfUm, irpfDois, etc. com anoEquivalente do payload
+      if (resultadosPorExercicioArray.length === 0) {
+        const irpfFields = ['irpfUm', 'irpfDois', 'irpfTres', 'irpfQuatro', 'irpfCinco', 
+                            'irpfSeis', 'irpfSete', 'irpfOito', 'irpfNove', 'irpfDez'];
+        const anoFields = ['anoEquivalente1', 'anoEquivalente2', 'anoEquivalente3', 'anoEquivalente4', 'anoEquivalente5',
+                           'anoEquivalente6', 'anoEquivalente7', 'anoEquivalente8', 'anoEquivalente9', 'anoEquivalente10'];
+        for (let i = 0; i < irpfFields.length; i++) {
+          const val = valorCalculos[irpfFields[i]];
+          // Buscar ano equivalente do payload (valorCalculos ou valueData)
+          let anoExercicio = valorCalculos[anoFields[i]] || (payload.valueData && payload.valueData[anoFields[i]]) || anosBase[i];
+          if (typeof anoExercicio === 'string') anoExercicio = parseInt(anoExercicio);
+          if (val && typeof val === 'number' && val !== 0) {
+            irpfRestituir += val;
+            resultadosPorExercicioArray.push({
+              exercicio: anoExercicio,
+              irpfRestituir: val
+            });
+            console.log(`[Formulário Externo] ${irpfFields[i]}: R$ ${(val/100).toFixed(2)} - Exercício ${anoExercicio}`);
+          }
         }
       }
     }
     
-    // Se ainda zero, tentar o valor direto do payload (também em centavos)
+    // TERCEIRO: Se ainda zero, tentar o valor direto do payload
     if (irpfRestituir === 0 && (payload.irpfRestituir || valorCalculos.irpfRestituir)) {
       irpfRestituir = payload.irpfRestituir || valorCalculos.irpfRestituir || 0;
     }
@@ -365,13 +406,19 @@ router.post("/receber", async (req: Request, res: Response) => {
 
     // Preparar dados para salvar
     // Armazenar exercícios e PDFs como JSON no campo resultadosPorExercicio
+    // Definir anosdiferentes como true se houver mais de 1 exercício
+    const temMultiplosExercicios = resultadosPorExercicioArray.length > 1;
+    
     const dadosExtras = {
-      anosdiferentes: payload.anosdiferentes,
+      anosdiferentes: temMultiplosExercicios || payload.anosdiferentes,
       pdfs: payload.pdfs,
       exercicios: payload.exercicios,
       idApp: payload.idApp,
-      resultadosPorExercicio: resultadosPorExercicioArray, // Array com valores por exercício (com SELIC)
+      resultadosPorExercicio: resultadosPorExercicioArray, // Array com valores por exercício
     };
+    
+    console.log('[Formulário Externo] Anos diferentes:', temMultiplosExercicios);
+    console.log('[Formulário Externo] dadosExtras:', JSON.stringify(dadosExtras, null, 2));
 
     // Inserir novo formulário com TODOS os dados extraídos
     // Extrair dados de userData, processData e valueData como fallback

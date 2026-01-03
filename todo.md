@@ -286,9 +286,11 @@
 - **O Dashboard espera:** `resultadosPorExercicio: "[{exercicio:2022,irpfRestituir:-14184.81},...]"`
 - **O site envia:** Apenas `irpfRestituir: 27515.36` (total, sem separação)
 
-### Solução Necessária:
-- [ ] Modificar `main.e98210db.js` para enviar `resultadosPorExercicio` com array JSON dos exercícios
-- [ ] Testar se os 6 botões aparecem após a correção
+### Solução Implementada (04/01/2026):
+- [x] Modificar `main.e98210db.js` para enviar `resultadosPorExercicio` com array JSON dos exercícios
+- [x] Atualizar tabela IPCA-E com 84 valores da planilha Excel (01/2019 a 12/2025)
+- [x] Gerar ZIP final: SITE_FINAL_04JAN2026.zip
+- [ ] Testar se os 6 botões aparecem após upload no Hostinger
 
 ### Arquivos de Referência:
 - `/home/ubuntu/BRIEFING_03JAN2026.md` - Briefing completo desta sessão
@@ -304,3 +306,49 @@ Continuar correção do sistema e-Restituição IRPF:
 4. Gerar ZIP e instruir upload no Hostinger
 5. Testar com dados Ana Carmen (CPF: 267.035.801-20)
 ```
+
+
+## Correções 04/01/2026 - Sessão 2
+
+### Problemas Identificados:
+1. Dashboard não usa o campo `resultadosPorExercicio` enviado pelo site
+2. Site não mostra somatória correta após pagamento (com valores negativos)
+
+### Correções a Implementar:
+- [ ] Dashboard: Usar `resultadosPorExercicio` do payload para gerar os 6 PDFs
+- [ ] Site externo: Mostrar somatória correta após pagamento (incluindo negativos)
+- [ ] Testar com Ana Carmen: 6 botões de PDF devem aparecer
+
+- [ ] Corrigir bug no site externo: distribuição de dados por exercício (honorários, DARF, meses)
+- [ ] Garantir que exercício 2025 seja calculado corretamente (irpfQuatro = null atualmente)
+
+
+## Correção CRÍTICA - Cálculo por Exercício (04/01/2026)
+
+### Problema Identificado:
+O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcular POR EXERCÍCIO como a planilha Excel faz.
+
+### Campos que precisam ser separados por exercício:
+- [ ] 1 - Total de Rendimentos Retirado pelo Autor (por exercício)
+- [ ] 2 - Total de DARF Paga (por exercício)
+- [ ] 7 - Total de Rendimentos Isentos (por exercício)
+- [ ] 8 - Rendimentos Sujeitos à Tributação Normal (por exercício)
+- [ ] 9 - Total de Despesas (Advogado, Perito, Custas) (por exercício)
+- [ ] 10 - Proporção a Deduzir de Despesas Pagas (por exercício)
+- [ ] 13 - Rendimentos Tributáveis (por exercício)
+- [ ] 15 - Imposto de Renda Retido na Fonte (por exercício)
+- [ ] 17 - Meses Discutidos na Ação (por exercício)
+- [ ] 18 - Rendimentos Isentos e Não Tributáveis (por exercício)
+
+### Exemplo Ana Carmen (valores corretos da planilha Excel):
+| Campo | 2022 | 2023 | 2025 | Site (errado) |
+|-------|------|------|------|---------------|
+| Rendimentos | 1.024.467,38 | 118.851,12 | 889.237,15 | 2.429.731,09 |
+| DARF | 174.527,34 | 20.247,37 | 151.489,64 | 413.926,80 |
+| Meses | 26,90 | 2,83 | 19,27 | 49,00 |
+
+### Ações Necessárias:
+- [ ] Modificar código JS do site para agrupar dados por exercício
+- [ ] Calcular cada campo separadamente para cada exercício
+- [ ] Enviar resultadosPorExercicio com todos os campos por exercício
+- [ ] Gerar PDFs com valores corretos por exercício
