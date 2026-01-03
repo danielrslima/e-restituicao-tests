@@ -12,10 +12,12 @@ import Notificacoes from "./pages/Notificacoes";
 import Configuracoes from "./pages/Configuracoes";
 import Usuarios from "./pages/Usuarios";
 import ImprimirRelatorio from "./pages/ImprimirRelatorio";
+import Login from "./pages/Login";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/login" component={Login} />
       <Route path="/" component={Home} />
       <Route path="/novo-calculo" component={NovoCalculo} />
       <Route path="/historico" component={Historico} />

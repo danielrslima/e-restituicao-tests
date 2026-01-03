@@ -125,6 +125,20 @@ export const appRouter = router({
         ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
         return { success: true, user };
       }),
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Criar novo usuário
+        const user = await createUserWithPassword(input.email, input.password, input.name);
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        const sessionToken = `session_${user.id}_${Date.now()}`;
+        ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
+        return { success: true, user };
+      }),
   }),
 
   // ============================================================================
