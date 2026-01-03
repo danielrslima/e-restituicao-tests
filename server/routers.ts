@@ -25,6 +25,7 @@ import { eq, like, or } from "drizzle-orm";
 import { notifyOwner } from "./_core/notification";
 import { generateEsclarecimentosPDF, EsclarecimentosData } from "./services/pdfEsclarecimentosService";
 import { generatePlanilhaRTPDF, PlanilhaRTData } from "./services/pdfPlanilhaRTService";
+import { createUserWithPassword, authenticateUser, updatePassword } from "./services/authService";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -109,6 +110,21 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    loginWithPassword: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await authenticateUser(input.email, input.password);
+        if (!user) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Email ou senha invalidos' });
+        }
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        const sessionToken = `session_${user.id}_${Date.now()}`;
+        ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
+        return { success: true, user };
+      }),
   }),
 
   // ============================================================================

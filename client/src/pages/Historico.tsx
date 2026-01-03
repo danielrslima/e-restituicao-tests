@@ -381,7 +381,7 @@ export default function Historico() {
                         <TableCell>{form.cpf}</TableCell>
                         <TableCell className="max-w-[150px] truncate">{form.numeroProcesso}</TableCell>
                         <TableCell className="text-green-600 font-medium">
-                          {formatCurrency(form.irpfRestituir)}
+                          {formatCurrency(calcularRestituicaoTotal(form))}
                         </TableCell>
                         <TableCell>{getStatusBadge(form.statusPagamento)}</TableCell>
                         <TableCell>{formatDate(form.createdAt)}</TableCell>

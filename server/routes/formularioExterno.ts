@@ -388,7 +388,11 @@ router.post("/receber", async (req: Request, res: Response) => {
       rra: String(rra),
       irMensal: String(irMensal),
       irDevido: irDevido,
-      irpfRestituir: irpfRestituir,
+      // CORREÇÃO: Para múltiplos exercícios, recalcular a soma dos exercícios
+      // em vez de usar o valor que veio do site (que pode estar incorreto)
+      irpfRestituir: payload.exercicios && Array.isArray(payload.exercicios) && payload.exercicios.length > 0
+        ? Math.round(payload.exercicios.reduce((sum: number, ex: any) => sum + (ex.irpfRestituir || 0), 0))
+        : irpfRestituir,
       
       statusPagamento: payload.statusPagamento || 'pendente',
       categoria: payload.categoria || 'starter',

@@ -14,8 +14,10 @@ export const users = mysqlTable("users", {
   /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
+  email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  /** Hash da senha (para autenticação própria) */
+  passwordHash: text("password_hash"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   /** Permissão para editar cálculos (independente de ser admin) */
   canEdit: mysqlEnum("can_edit", ["yes", "no"]).default("no").notNull(),

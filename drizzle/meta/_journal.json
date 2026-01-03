@@ -29,6 +29,13 @@
       "when": 1767161597861,
       "tag": "0003_true_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1767328427673,
+      "tag": "0004_common_mentallo",
+      "breakpoints": true
     }
   ]
 }
