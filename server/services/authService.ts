@@ -61,7 +61,7 @@ export async function createUserWithPassword(
 export async function authenticateUser(
   email: string,
   password: string
-): Promise<{ id: number; email: string; name?: string } | null> {
+): Promise<{ id: number; openId: string; email: string; name?: string; role: string } | null> {
   const db = await getDb();
   if (!db) return null;
 
@@ -86,8 +86,10 @@ export async function authenticateUser(
 
   return {
     id: user.id,
+    openId: user.openId,
     email: user.email || '',
     name: user.name || undefined,
+    role: user.role,
   };
 }
 

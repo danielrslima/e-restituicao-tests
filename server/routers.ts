@@ -120,8 +120,19 @@ export const appRouter = router({
         if (!user) {
           throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Email ou senha invalidos' });
         }
+        // Criar JWT válido (mesmo formato do OAuth)
+        const { SignJWT } = await import('jose');
+        const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || '');
+        const sessionToken = await new SignJWT({
+          openId: user.openId, // Usar openId do banco de dados
+          appId: process.env.VITE_APP_ID || '',
+          name: user.name || user.email,
+        })
+          .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+          .setExpirationTime('30d')
+          .sign(secretKey);
+        
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        const sessionToken = `session_${user.id}_${Date.now()}`;
         ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
         return { success: true, user };
       }),
@@ -134,8 +145,19 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Criar novo usuário
         const user = await createUserWithPassword(input.email, input.password, input.name);
+        // Criar JWT válido (mesmo formato do OAuth)
+        const { SignJWT } = await import('jose');
+        const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || '');
+        const sessionToken = await new SignJWT({
+          openId: user.id.toString(),
+          appId: process.env.VITE_APP_ID || '',
+          name: user.name || user.email,
+        })
+          .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+          .setExpirationTime('30d')
+          .sign(secretKey);
+        
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        const sessionToken = `session_${user.id}_${Date.now()}`;
         ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
         return { success: true, user };
       }),

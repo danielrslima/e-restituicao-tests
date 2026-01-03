@@ -196,19 +196,18 @@
 
 
 
-## 🔴 Problemas Encontrados Nesta Sessão (02/01/2026)
+## ✅ Problemas RESOLVIDOS Nesta Sessão (02/01/2026)
 
-- [ ] **Login com email/senha não funciona** - Redireciona para projeto migrado (restdash-f9fu4fvm.manus.space)
-  - Causa: Configuração de OAuth ou rota apontando para domínio errado
-  - Solução: Verificar variáveis de ambiente e rotas de autenticação
+- [x] **Login com email/senha FUNCIONANDO** - Corrigido redirecionamento
+  - Causa: Botão "Entrar" na tela inicial ia direto para OAuth
+  - Solução: Adicionados dois botões na tela inicial (Email/Senha e Manus OAuth)
+  - Corrigido: authService retorna openId do banco de dados
+  - Corrigido: loginWithPassword usa openId correto no JWT
+  - Corrigido: Senha do admin atualizada com hash bcrypt válido
   
-- [ ] **Email aparece duplicado na página de login** - Label mostra o email abaixo do campo
-  - Causa: Problema no componente Login.tsx
-  - Solução: Remover label duplicado ou ajustar CSS
-
-- [ ] **Campo de senha não aparece na lista de elementos do navegador**
-  - Causa: Estrutura do HTML com position:relative
-  - Solução: Simplificar estrutura do componente
+- [x] **Tela inicial com duas opções de login**
+  - "Entrar com Email e Senha" (verde) - vai para /login
+  - "Entrar com Manus OAuth" (branco) - mantém fluxo OAuth
 
 ## ✅ Implementações Desta Sessão (02/01/2026)
 

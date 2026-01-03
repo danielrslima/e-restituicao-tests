@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, openId, name, email, role, password_hash FROM users WHERE email = 'daniel@ir360.com.br';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT id, openId, name, email, role, password_hash FROM users WHERE email = 'daniel@ir360.com.br';",
+  "rows": [
+    {
+      "id": "960042",
+      "openId": "admin-daniel-ir360",
+      "name": "Daniel Lima",
+      "email": "daniel@ir360.com.br",
+      "role": "admin",
+      "password_hash": "$2b$10$nfu3zUaL3upz5od4aBVy0e7S5N/8yL/DOjkWMFWwu8flKLo1p9d8G"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\trole\tpassword_hash\n960042\tadmin-daniel-ir360\tDaniel Lima\tdaniel@ir360.com.br\tadmin\t$2b$10$nfu3zUaL3upz5od4aBVy0e7S5N/8yL/DOjkWMFWwu8flKLo1p9d8G\n",
+  "stderr": "",
+  "execution_time_ms": 1532
+}
