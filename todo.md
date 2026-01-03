@@ -277,3 +277,30 @@
 
 ### Próximo Passo (após validação):
 - [ ] **Implementar atualização automática das tabelas** - Sistema que baixa PDF do TRT2 e API do BCB mensalmente para atualizar os coeficientes automaticamente
+
+
+## PROBLEMA CRÍTICO IDENTIFICADO (03/01/2026 - 21h)
+
+### 6 Botões de PDF não aparecem em novos cálculos
+- **Causa raiz:** Site externo NÃO envia campo `resultadosPorExercicio` para o Dashboard
+- **O Dashboard espera:** `resultadosPorExercicio: "[{exercicio:2022,irpfRestituir:-14184.81},...]"`
+- **O site envia:** Apenas `irpfRestituir: 27515.36` (total, sem separação)
+
+### Solução Necessária:
+- [ ] Modificar `main.e98210db.js` para enviar `resultadosPorExercicio` com array JSON dos exercícios
+- [ ] Testar se os 6 botões aparecem após a correção
+
+### Arquivos de Referência:
+- `/home/ubuntu/BRIEFING_03JAN2026.md` - Briefing completo desta sessão
+- `/home/ubuntu/indices_validados.md` - Índices IPCA-E e SELIC validados
+- `/home/ubuntu/upload/restituicaoia-CORRIGIDO-FINAL.zip` - Arquivo original que funcionava em 30/12
+
+### Comando para Próxima Tarefa:
+```
+Continuar correção do sistema e-Restituição IRPF:
+1. Ler BRIEFING_03JAN2026.md para contexto
+2. Modificar main.e98210db.js para enviar resultadosPorExercicio
+3. Corrigir tabela IPCA-E com valores de indices_validados.md
+4. Gerar ZIP e instruir upload no Hostinger
+5. Testar com dados Ana Carmen (CPF: 267.035.801-20)
+```
