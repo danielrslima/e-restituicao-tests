@@ -334,12 +334,28 @@ Continuar correção do sistema e-Restituição IRPF:
 
 ## Fase 5: Testes e Validação no Hostinger (05/01/2026)
 
-- [ ] Extrair ZIP no Hostinger (/public_html)
-- [ ] Configurar permissões do .htaccess (644)
+- [x] Extrair ZIP no Hostinger (/public_html)
+- [x] Configurar permissões do .htaccess (644) - Corrigido
 - [ ] Testar com José Ramos (esperado: R$ 74.028,67)
 - [ ] Testar com Ana Carmen (esperado: R$ 27.515,36)
 - [ ] Validar logo em todas as páginas
 - [ ] Validar .htaccess funcionando
+
+### Correção Realizada (05/01/2026 - 21:27):
+- [x] Remover .htaccess que estava causando erro 403
+- [x] Usar .htaccess original do arquivo do usuário
+- [x] Gerar novo ZIP com motor novo + arquivo original
+- [x] Arquivo: e-restituicao-MOTOR-NOVO-SIMPLES-050126.zip (783 KB)
+
+### Fluxo Completo Testado e Documentado (05/01/2026 - 21:45):
+- [x] Usuário preencheu formulário e clicou em Calcular
+- [x] Sistema exibiu valor a restituir (R$ 15,99)
+- [x] Primeiro pagamento via PIX (R$ 5,99) - Asaaz integrado
+- [x] Segundo pagamento - Kit IR via PIX (R$ 10,00)
+- [x] Redirecionamento para WhatsApp (especialista)
+- [x] Fluxo completo com 14 passos documentado
+- [x] Arquivo: FLUXO_COMPLETO_E-RESTITUICAO_05JAN2026.md
+- [x] Arquivo: REGISTRO_PERMANENTE_FLUXO_E-RESTITUICAO.md
 
 ## Correção CRÍTICA - Cálculo por Exercício (04/01/2026)
 
@@ -370,3 +386,20 @@ O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcul
 - [ ] Calcular cada campo separadamente para cada exercício
 - [ ] Enviar resultadosPorExercicio com todos os campos por exercício
 - [ ] Gerar PDFs com valores corretos por exercício
+
+
+## Implementação Futura Registrada (05/01/2026 - 21:55)
+
+- [ ] Sistema de Recuperação de Sessão (Prioridade: ALTA)
+  - Problema: Site zera campos após fluxo
+  - Problema: Clientes com falhas no meio do fluxo perdem dados
+  - Solução: LocalStorage + Banco de Dados + Email de recuperação
+  - Arquivo: IMPLEMENTACAO_FUTURA_RECUPERACAO_SESSAO.md
+
+- [ ] Dashboard com erro (Failed to load resource)
+  - Status: Investigar causa do erro 502
+  - Ação: Verificar logs do servidor
+
+- [ ] Site restituicaoia.com.br zera campos após fluxo
+  - Status: Investigar se é comportamento esperado
+  - Ação: Validar com usuário
