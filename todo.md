@@ -323,6 +323,15 @@ Continuar correção do sistema e-Restituição IRPF:
 - [ ] Garantir que exercício 2025 seja calculado corretamente (irpfQuatro = null atualmente)
 
 
+## 📌 NOVA TAREFA - Atualização Automática de Índices (05/01/2026 - 15:10)
+
+- [x] Implementar integração com API TRT2 para IPCA-E
+- [x] Implementar integração com API BCB para SELIC
+- [x] Criar job agendado (Cron) para atualização mensal
+- [x] Adicionar testes para atualização automática (21 testes)
+- [x] Documentar processo de atualização (12 páginas)
+- [x] Deploy da atualização automática (build com sucesso)
+
 ## Correção CRÍTICA - Cálculo por Exercício (04/01/2026)
 
 ### Problema Identificado:
