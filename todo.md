@@ -332,6 +332,15 @@ Continuar correção do sistema e-Restituição IRPF:
 - [x] Documentar processo de atualização (12 páginas)
 - [x] Deploy da atualização automática (build com sucesso)
 
+## Fase 5: Testes e Validação no Hostinger (05/01/2026)
+
+- [ ] Extrair ZIP no Hostinger (/public_html)
+- [ ] Configurar permissões do .htaccess (644)
+- [ ] Testar com José Ramos (esperado: R$ 74.028,67)
+- [ ] Testar com Ana Carmen (esperado: R$ 27.515,36)
+- [ ] Validar logo em todas as páginas
+- [ ] Validar .htaccess funcionando
+
 ## Correção CRÍTICA - Cálculo por Exercício (04/01/2026)
 
 ### Problema Identificado:
