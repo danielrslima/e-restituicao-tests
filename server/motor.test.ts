@@ -27,30 +27,30 @@ describe('Motor de Cálculo IRPF', () => {
       const resultado = calcularIRPF(dados);
 
       // Validar resultado total
-      expect(resultado.totalIrpf).toBeCloseTo(7402867, 0); // R$ 74.028,67 em centavos
+      expect(resultado.totalIrpf).toBeCloseTo(74028.67, 1); // R$ 74.028,67
       expect(resultado.descricaoTotal).toBe('Imposto a Restituir');
     });
 
     it('deve detectar automaticamente que é mesmo ano', () => {
       const resultado = calcularIRPF(dados);
 
-      // Deve ter apenas 1 exercício (2020)
+      // Deve ter apenas 1 exercício (2021 - exercício fiscal do alvará 2020)
       expect(resultado.exercicios).toHaveLength(1);
-      expect(resultado.exercicios[0].exercicio).toBe(2020);
+      expect(resultado.exercicios[0].exercicio).toBe(2021);
     });
 
     it('deve calcular proporção tributável corretamente', () => {
       const resultado = calcularIRPF(dados);
 
-      // Proporção: 985587.96 / 2533329.85 = 0.388888...
-      expect(resultado.proporcaoTributavel).toBeCloseTo(0.388888, 5);
+      // Proporção: 985587.96 / 2533329.85 = 0.3890484...
+      expect(resultado.proporcaoTributavel).toBeCloseTo(0.3890484, 5);
     });
 
     it('deve retornar detalhes do exercício', () => {
       const resultado = calcularIRPF(dados);
 
       const exercicio = resultado.exercicios[0];
-      expect(exercicio.exercicio).toBe(2020);
+      expect(exercicio.exercicio).toBe(2021);
       expect(exercicio.rendimentosTributaveis).toBeGreaterThan(0);
       expect(exercicio.irrf).toBeGreaterThan(0);
       expect(exercicio.numeroMeses).toBeCloseTo(58, 0);
