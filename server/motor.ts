@@ -207,10 +207,9 @@ const DATA_LIMITE_TABELA_4 = new Date(Date.UTC(2025, 11, 31)); // 31/12/2025
 // ============================================================================
 
 function getExercicioFiscal(data: Date): number {
-  const ano = data.getUTCFullYear();
-  const mes = data.getUTCMonth() + 1;
-  // Exercício fiscal: se janeiro-março, é o mesmo ano; se abril-dezembro, é ano + 1
-  return mes <= 3 ? ano : ano + 1;
+  // Exercício fiscal = ano + 1 (SEMPRE)
+  // Exemplo: Alvará em 2020 → Exercício 2021
+  return data.getUTCFullYear() + 1;
 }
 
 function getIpcaCoefficient(data: Date, usarDeflacao: boolean): number {
