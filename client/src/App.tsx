@@ -13,6 +13,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Usuarios from "./pages/Usuarios";
 import ImprimirRelatorio from "./pages/ImprimirRelatorio";
 import Login from "./pages/Login";
+import { TestarMotor } from "./pages/TestarMotor";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/configuracoes" component={Configuracoes} />
       <Route path="/usuarios" component={Usuarios} />
       <Route path="/imprimir/:id" component={ImprimirRelatorio} />
+      <Route path="/testar-motor" component={TestarMotor} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

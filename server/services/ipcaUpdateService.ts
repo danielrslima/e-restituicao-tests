@@ -10,8 +10,8 @@
  */
 
 import axios from 'axios';
-import * as pdfParse from 'pdf-parse';
-import { ipcaIndices } from './ipcaService';
+// import * as pdfParse from 'pdf-parse';
+// import { ipcaIndices } from './ipcaService';
 
 interface IPCAData {
   mes: number;
@@ -44,8 +44,9 @@ export async function buscarIPCAETrt2(): Promise<IPCAData[]> {
     });
     
     // Extrair texto do PDF
-    const pdfData = await pdfParse(response.data);
-    const texto = pdfData.text;
+    // const pdfData = await pdfParse(response.data);
+    // const texto = pdfData.text;
+    const texto = ''; // TODO: Implementar extração de PDF
     
     console.log('[IPCA-E] PDF extraído com sucesso');
     

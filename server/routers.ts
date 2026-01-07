@@ -26,6 +26,7 @@ import { notifyOwner } from "./_core/notification";
 import { generateEsclarecimentosPDF, EsclarecimentosData } from "./services/pdfEsclarecimentosService";
 import { generatePlanilhaRTPDF, PlanilhaRTData } from "./services/pdfPlanilhaRTService";
 import { createUserWithPassword, authenticateUser, updatePassword } from "./services/authService";
+import { calcularIRPF as calcularIRPFMotor, type DadosEntradaMotor, type ResultadoCalculoIRPF } from "./motor";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -102,6 +103,58 @@ const irpfFormInputSchema = z.object({
 
 export const appRouter = router({
   system: systemRouter,
+  
+  // Novo procedimento para cálculo com motor TypeScript
+  calcular: router({
+    motor: publicProcedure
+      .input(z.object({
+        brutoHomologado: z.number().min(0),
+        tributavelHomologado: z.number().min(0),
+        numeroMeses: z.number().min(1),
+        linhas: z.array(z.object({
+          valorAlvara: z.number().min(0),
+          dataAlvara: z.string().min(1),
+          valorHonorario: z.number().optional(),
+          anoPagoHonorario: z.number().optional(),
+        })).min(1),
+        darfs: z.array(z.object({
+          valor: z.number().min(0),
+          data: z.string().min(1),
+        })).min(1),
+      }))
+      .query(async ({ input }) => {
+        try {
+          // Converter strings de data para Date
+          const linhasFormatadas = input.linhas.map(linha => ({
+            valorAlvara: linha.valorAlvara,
+            dataAlvara: new Date(linha.dataAlvara),
+            valorHonorario: linha.valorHonorario || 0,
+            anoPagoHonorario: linha.anoPagoHonorario,
+          }));
+
+          const darfsFormatados = input.darfs.map(darf => ({
+            valor: darf.valor,
+            data: new Date(darf.data),
+          }));
+
+          // Chamar motor de cálculo
+          const resultado = calcularIRPFMotor({
+            brutoHomologado: input.brutoHomologado,
+            tributavelHomologado: input.tributavelHomologado,
+            numeroMeses: input.numeroMeses,
+            linhas: linhasFormatadas,
+            darfs: darfsFormatados,
+          });
+
+          return resultado;
+        } catch (erro) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Erro ao calcular IRPF: ${erro instanceof Error ? erro.message : 'Erro desconhecido'}`,
+          });
+        }
+      }),
+  }),
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
