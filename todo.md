@@ -262,8 +262,8 @@
 - [x] Registrar identificação: IPCA-e_COMPLETO_JAN2026_v1
 - [x] Corrigir todos os 73 meses (Janeiro/2020 - Janeiro/2026)
 - [x] Verificar build compilando corretamente
-- [ ] Testar cálculos com novo IPCA
-- [ ] Validar resultados com dados de teste
+- [x] Testar cálculos com novo IPCA (13/13 testes passando)
+- [x] Validar resultados com dados de teste (José Ramos e Ana Carmen)
 
 ## Correção Site Externo - Tabelas IPCA-E e SELIC (03/01/2026)
 
