@@ -5,10 +5,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import {
+  formatProcesso,
+  formatData,
+  formatValor,
+  formatAno,
+  formatCPF,
+  formatCNPJ,
+  isDataValida,
+  isAnoValido,
+  parseValor,
+  formatCurrency,
+} from "@/lib/formatters";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { Calculator, User, FileText, DollarSign, Loader2 } from "lucide-react";
+import { Calculator, User, FileText, DollarSign, Loader2, Trash2, Plus } from "lucide-react";
+
+interface Alvara {
+  id: string;
+  valor: string;
+  data: string;
+}
+
+interface Darf {
+  id: string;
+  valor: string;
+  data: string;
+}
+
+interface Honorario {
+  id: string;
+  valor: string;
+  ano: string;
+}
 
 export default function NovoCalculo() {
   const { user } = useAuth();
@@ -28,17 +58,23 @@ export default function NovoCalculo() {
     comarca: "",
     fontePagadora: "",
     cnpj: "",
-    // Valores
+    // Valores principais
     brutoHomologado: "",
     tributavelHomologado: "",
     numeroMeses: "",
-    alvaraValor: "",
-    alvaraData: "",
-    darfValor: "",
-    darfData: "",
-    honorariosValor: "",
-    honorariosAno: new Date().getFullYear().toString(),
   });
+
+  const [alvaras, setAlvaras] = useState<Alvara[]>([
+    { id: "1", valor: "", data: "" },
+  ]);
+
+  const [darfs, setDarfs] = useState<Darf[]>([
+    { id: "1", valor: "", data: "" },
+  ]);
+
+  const [honorarios, setHonorarios] = useState<Honorario[]>([
+    { id: "1", valor: "", ano: new Date().getFullYear().toString() },
+  ]);
 
   const [resultado, setResultado] = useState<{
     proporcao: string;
@@ -50,6 +86,8 @@ export default function NovoCalculo() {
     irDevido: number;
     irpfRestituir: number;
   } | null>(null);
+
+  const tabCountRef = useRef(0);
 
   const createMutation = trpc.irpf.create.useMutation({
     onSuccess: (data) => {
@@ -67,35 +105,112 @@ export default function NovoCalculo() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
+  const handleAlvaraChange = (id: string, field: "valor" | "data", value: string) => {
+    setAlvaras(prev => prev.map(a => 
+      a.id === id 
+        ? { 
+            ...a, 
+            [field]: field === "valor" ? formatValor(value) : formatData(value)
+          }
+        : a
+    ));
   };
 
-  const formatCNPJ = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d)/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
+  const handleDarfChange = (id: string, field: "valor" | "data", value: string) => {
+    setDarfs(prev => prev.map(d => 
+      d.id === id 
+        ? { 
+            ...d, 
+            [field]: field === "valor" ? formatValor(value) : formatData(value)
+          }
+        : d
+    ));
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value / 100);
+  const handleHonorarioChange = (id: string, field: "valor" | "ano", value: string) => {
+    setHonorarios(prev => prev.map(h => 
+      h.id === id 
+        ? { 
+            ...h, 
+            [field]: field === "valor" ? formatValor(value) : formatAno(value)
+          }
+        : h
+    ));
   };
 
-  const parseCurrency = (value: string): number => {
-    const cleaned = value.replace(/\D/g, '');
-    return parseInt(cleaned) || 0;
+  const handleTabKey = (e: React.KeyboardEvent, type: "alvara" | "darf" | "honorario", id: string, isLastField: boolean) => {
+    if (e.key === "Tab" && !e.shiftKey) {
+      if (isLastField) {
+        e.preventDefault();
+        
+        // Verificar se é a última linha
+        const items = type === "alvara" ? alvaras : type === "darf" ? darfs : honorarios;
+        const isLastRow = items[items.length - 1].id === id;
+        
+        if (isLastRow) {
+          // Adicionar nova linha vazia
+          const newId = Date.now().toString();
+          if (type === "alvara") {
+            setAlvaras(prev => [...prev, { id: newId, valor: "", data: "" }]);
+          } else if (type === "darf") {
+            setDarfs(prev => [...prev, { id: newId, valor: "", data: "" }]);
+          } else {
+            setHonorarios(prev => [...prev, { id: newId, valor: "", ano: new Date().getFullYear().toString() }]);
+          }
+          
+          tabCountRef.current = 0;
+        } else {
+          tabCountRef.current++;
+          
+          // Se TAB 2x, remover linhas vazias
+          if (tabCountRef.current >= 2) {
+            if (type === "alvara") {
+              setAlvaras(prev => prev.filter(a => a.valor.trim() !== "" || a.data.trim() !== ""));
+            } else if (type === "darf") {
+              setDarfs(prev => prev.filter(d => d.valor.trim() !== "" || d.data.trim() !== ""));
+            } else {
+              setHonorarios(prev => prev.filter(h => h.valor.trim() !== "" || h.ano.trim() !== ""));
+            }
+            tabCountRef.current = 0;
+          }
+        }
+      }
+    } else {
+      tabCountRef.current = 0;
+    }
+  };
+
+  const addAlvara = () => {
+    const newId = Date.now().toString();
+    setAlvaras(prev => [...prev, { id: newId, valor: "", data: "" }]);
+  };
+
+  const removeAlvara = (id: string) => {
+    if (alvaras.length > 1) {
+      setAlvaras(prev => prev.filter(a => a.id !== id));
+    }
+  };
+
+  const addDarf = () => {
+    const newId = Date.now().toString();
+    setDarfs(prev => [...prev, { id: newId, valor: "", data: "" }]);
+  };
+
+  const removeDarf = (id: string) => {
+    if (darfs.length > 1) {
+      setDarfs(prev => prev.filter(d => d.id !== id));
+    }
+  };
+
+  const addHonorario = () => {
+    const newId = Date.now().toString();
+    setHonorarios(prev => [...prev, { id: newId, valor: "", ano: new Date().getFullYear().toString() }]);
+  };
+
+  const removeHonorario = (id: string) => {
+    if (honorarios.length > 1) {
+      setHonorarios(prev => prev.filter(h => h.id !== id));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -107,6 +222,29 @@ export default function NovoCalculo() {
       return;
     }
 
+    // Validar datas
+    for (const alvara of alvaras) {
+      if (alvara.valor && !isDataValida(alvara.data)) {
+        toast.error("Data do alvará inválida. Use DD/MM/YYYY");
+        return;
+      }
+    }
+
+    for (const darf of darfs) {
+      if (darf.valor && !isDataValida(darf.data)) {
+        toast.error("Data do DARF inválida. Use DD/MM/YYYY");
+        return;
+      }
+    }
+
+    for (const honorario of honorarios) {
+      if (honorario.valor && !isAnoValido(honorario.ano)) {
+        toast.error("Ano do honorário inválido. Use YYYY (4 dígitos)");
+        return;
+      }
+    }
+
+    // Usar apenas o primeiro alvará, DARF e honorário por enquanto
     createMutation.mutate({
       nomeCliente: formData.nomeCliente,
       cpf: formData.cpf,
@@ -118,15 +256,15 @@ export default function NovoCalculo() {
       comarca: formData.comarca,
       fontePagadora: formData.fontePagadora,
       cnpj: formData.cnpj,
-      brutoHomologado: parseCurrency(formData.brutoHomologado),
-      tributavelHomologado: parseCurrency(formData.tributavelHomologado),
+      brutoHomologado: parseValor(formData.brutoHomologado),
+      tributavelHomologado: parseValor(formData.tributavelHomologado),
       numeroMeses: parseInt(formData.numeroMeses) || 1,
-      alvaraValor: parseCurrency(formData.alvaraValor),
-      alvaraData: formData.alvaraData,
-      darfValor: parseCurrency(formData.darfValor),
-      darfData: formData.darfData,
-      honorariosValor: parseCurrency(formData.honorariosValor),
-      honorariosAno: formData.honorariosAno,
+      alvaraValor: parseValor(alvaras[0]?.valor || ""),
+      alvaraData: alvaras[0]?.data || "",
+      darfValor: parseValor(darfs[0]?.valor || ""),
+      darfData: darfs[0]?.data || "",
+      honorariosValor: parseValor(honorarios[0]?.valor || ""),
+      honorariosAno: honorarios[0]?.ano || "",
     });
   };
 
@@ -150,7 +288,7 @@ export default function NovoCalculo() {
               </CardTitle>
               <CardDescription>Informações do contribuinte</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
+            <CardContent className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="nomeCliente">Nome Completo *</Label>
                 <Input
@@ -185,7 +323,7 @@ export default function NovoCalculo() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="email">E-mail *</Label>
                 <Input
                   id="email"
@@ -197,7 +335,7 @@ export default function NovoCalculo() {
                   required
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input
                   id="telefone"
@@ -226,8 +364,9 @@ export default function NovoCalculo() {
                   id="numeroProcesso"
                   name="numeroProcesso"
                   value={formData.numeroProcesso}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numeroProcesso: formatProcesso(e.target.value) }))}
                   placeholder="0000000-00.0000.0.00.0000"
+                  maxLength={27}
                   required
                 />
               </div>
@@ -279,12 +418,12 @@ export default function NovoCalculo() {
             </CardContent>
           </Card>
 
-          {/* Valores do Cálculo */}
+          {/* Valores Principais */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                Valores do Cálculo
+                Valores Principais
               </CardTitle>
               <CardDescription>Informe os valores em reais (R$)</CardDescription>
             </CardHeader>
@@ -295,7 +434,7 @@ export default function NovoCalculo() {
                   id="brutoHomologado"
                   name="brutoHomologado"
                   value={formData.brutoHomologado}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, brutoHomologado: formatValor(e.target.value) }))}
                   placeholder="0,00"
                   required
                 />
@@ -306,168 +445,243 @@ export default function NovoCalculo() {
                   id="tributavelHomologado"
                   name="tributavelHomologado"
                   value={formData.tributavelHomologado}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tributavelHomologado: formatValor(e.target.value) }))}
                   placeholder="0,00"
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="numeroMeses">Número de Meses (RRA) *</Label>
                 <Input
                   id="numeroMeses"
                   name="numeroMeses"
                   type="number"
-                  min="1"
                   value={formData.numeroMeses}
                   onChange={handleChange}
                   placeholder="Ex: 24"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alvaraValor">Valor do Alvará (R$) *</Label>
-                <Input
-                  id="alvaraValor"
-                  name="alvaraValor"
-                  value={formData.alvaraValor}
-                  onChange={handleChange}
-                  placeholder="0,00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alvaraData">Data do Alvará *</Label>
-                <Input
-                  id="alvaraData"
-                  name="alvaraData"
-                  type="date"
-                  value={formData.alvaraData}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="darfValor">Valor do DARF/IR Retido (R$) *</Label>
-                <Input
-                  id="darfValor"
-                  name="darfValor"
-                  value={formData.darfValor}
-                  onChange={handleChange}
-                  placeholder="0,00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="darfData">Data do DARF *</Label>
-                <Input
-                  id="darfData"
-                  name="darfData"
-                  type="date"
-                  value={formData.darfData}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="honorariosValor">Honorários Advocatícios (R$) *</Label>
-                <Input
-                  id="honorariosValor"
-                  name="honorariosValor"
-                  value={formData.honorariosValor}
-                  onChange={handleChange}
-                  placeholder="0,00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="honorariosAno">Ano dos Honorários *</Label>
-                <Input
-                  id="honorariosAno"
-                  name="honorariosAno"
-                  value={formData.honorariosAno}
-                  onChange={handleChange}
-                  placeholder="2024"
-                  maxLength={4}
+                  min="1"
+                  max="120"
                   required
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Botão de Envio */}
-          <div className="flex justify-end gap-4">
+          {/* Alvarás */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Alvarás</CardTitle>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addAlvara}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {alvaras.map((alvara, index) => (
+                <div key={alvara.id} className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      value={alvara.valor}
+                      onChange={(e) => handleAlvaraChange(alvara.id, "valor", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "alvara", alvara.id, true)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label>Data</Label>
+                    <Input
+                      value={alvara.data}
+                      onChange={(e) => handleAlvaraChange(alvara.id, "data", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "alvara", alvara.id, true)}
+                      placeholder="DD/MM/YYYY"
+                      maxLength={10}
+                    />
+                  </div>
+                  {alvaras.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeAlvara(alvara.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* DARFs */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>DARFs / IR Retido</CardTitle>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addDarf}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {darfs.map((darf, index) => (
+                <div key={darf.id} className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      value={darf.valor}
+                      onChange={(e) => handleDarfChange(darf.id, "valor", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "darf", darf.id, true)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label>Data</Label>
+                    <Input
+                      value={darf.data}
+                      onChange={(e) => handleDarfChange(darf.id, "data", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "darf", darf.id, true)}
+                      placeholder="DD/MM/YYYY"
+                      maxLength={10}
+                    />
+                  </div>
+                  {darfs.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeDarf(darf.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Honorários */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Honorários Advocatícios</CardTitle>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addHonorario}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {honorarios.map((honorario, index) => (
+                <div key={honorario.id} className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      value={honorario.valor}
+                      onChange={(e) => handleHonorarioChange(honorario.id, "valor", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "honorario", honorario.id, true)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label>Ano</Label>
+                    <Input
+                      value={honorario.ano}
+                      onChange={(e) => handleHonorarioChange(honorario.id, "ano", e.target.value)}
+                      onKeyDown={(e) => handleTabKey(e, "honorario", honorario.id, true)}
+                      placeholder="YYYY"
+                      maxLength={4}
+                    />
+                  </div>
+                  {honorarios.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeHonorario(honorario.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Resultado */}
+          {resultado && (
+            <Card className="bg-green-50 border-green-200">
+              <CardHeader>
+                <CardTitle className="text-green-700">Resultado do Cálculo</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-sm text-gray-600">Proporção Tributável</p>
+                  <p className="text-2xl font-bold text-green-700">{resultado.proporcao}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Base de Cálculo</p>
+                  <p className="text-2xl font-bold text-green-700">{formatCurrency(resultado.baseCalculo)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">IR Mensal</p>
+                  <p className="text-2xl font-bold text-green-700">{resultado.irMensal}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">IR Devido</p>
+                  <p className="text-2xl font-bold text-green-700">{formatCurrency(resultado.irDevido)}</p>
+                </div>
+                <div className="md:col-span-2 border-t pt-4">
+                  <p className="text-sm text-gray-600">IRPF a Restituir</p>
+                  <p className="text-3xl font-bold text-green-700">{formatCurrency(resultado.irpfRestituir)}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Botões */}
+          <div className="flex gap-3 justify-end">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation("/dashboard")}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-green-600 hover:bg-green-700"
+              className="gap-2 bg-green-600 hover:bg-green-700"
               disabled={createMutation.isPending}
             >
-              {createMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Calculando...
-                </>
-              ) : (
-                <>
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Calcular Restituição
-                </>
-              )}
+              {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {createMutation.isPending ? "Calculando..." : "Calcular Restituição"}
             </Button>
           </div>
         </form>
-
-        {/* Resultado do Cálculo */}
-        {resultado && (
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-700">Resultado do Cálculo</CardTitle>
-              <CardDescription>Valores calculados com base nos dados informados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="bg-white p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Proporção Tributável</p>
-                  <p className="text-xl font-bold">{resultado.proporcao}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Base de Cálculo</p>
-                  <p className="text-xl font-bold">{formatCurrency(resultado.baseCalculo)}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">IR Devido</p>
-                  <p className="text-xl font-bold">{formatCurrency(resultado.irDevido)}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border-2 border-green-500">
-                  <p className="text-sm text-green-600 font-medium">IRPF a Restituir</p>
-                  <p className="text-2xl font-bold text-green-700">
-                    {formatCurrency(resultado.irpfRestituir)}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex gap-4">
-                <Button
-                  onClick={() => setLocation('/historico')}
-                  variant="outline"
-                >
-                  Ver Histórico
-                </Button>
-                <Button
-                  onClick={() => setLocation('/exportar')}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Exportar Documentos
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );
