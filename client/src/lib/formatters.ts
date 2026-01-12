@@ -85,6 +85,7 @@ export const isDataValida = (data: string): boolean => {
 /**
  * Formata valor monetário no formato 1.234.567,89
  * Sempre com 2 casas decimais
+ * SEM zeros à esquerda (326.562,62 e não 00.326.562,62)
  * Exemplo: 2.315.218,05
  */
 export const formatValor = (value: string): string => {
@@ -92,20 +93,19 @@ export const formatValor = (value: string): string => {
   
   if (cleaned.length === 0) return '';
   
-  // Garantir que sempre tem 2 casas decimais
-  const padded = cleaned.padStart(3, '0');
-  const inteiro = padded.slice(0, -2) || '0';
-  const decimal = padded.slice(-2);
+  // Remover zeros à esquerda, mas manter pelo menos '0'
+  const inteiroParte = cleaned.slice(0, -2).replace(/^0+/, '') || '0';
+  const decimalParte = cleaned.slice(-2).padStart(2, '0');
   
   // Formatar parte inteira com separadores de milhares
-  const inteiroParts = inteiro.split('').reverse();
+  const inteiroParts = inteiroParte.split('').reverse();
   const inteiroParts3 = [];
   for (let i = 0; i < inteiroParts.length; i += 3) {
     inteiroParts3.push(inteiroParts.slice(i, i + 3).reverse().join(''));
   }
   const inteiroFormatado = inteiroParts3.reverse().join('.');
   
-  return `${inteiroFormatado},${decimal}`;
+  return `${inteiroFormatado},${decimalParte}`;
 };
 
 /**
@@ -180,4 +180,118 @@ export const formatCurrency = (value: number): string => {
     style: 'currency',
     currency: 'BRL',
   }).format(value / 100);
+};
+
+/**
+ * Capitaliza primeira letra de cada palavra (exceto preposições)
+ * Exemplo: "são paulo" → "São Paulo"
+ */
+const preposicoes = ['de', 'do', 'da', 'dos', 'das', 'e', 'ou', 'em', 'a', 'o', 'as', 'os'];
+
+export const capitalize = (text: string): string => {
+  if (!text) return '';
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => {
+      // Primeira palavra sempre maiúscula
+      if (index === 0) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      
+      // Preposições minúsculas, resto maiúsculo
+      if (preposicoes.includes(word)) {
+        return word;
+      }
+      
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+};
+
+/**
+ * Formata Nome com iniciais maiúsculas e preposições minúsculas
+ * Exemplo: "josé ramos de oliveira" → "José Ramos de Oliveira"
+ */
+export const formatNome = (value: string): string => {
+  const cleaned = value.replace(/[^a-záéíóúàâêôãõç\s]/gi, '').slice(0, 100);
+  return capitalize(cleaned);
+};
+
+/**
+ * Formata Comarca com iniciais maiúsculas e preposições minúsculas
+ * Exemplo: "são paulo/sp" → "São Paulo/SP"
+ */
+export const formatComarca = (value: string): string => {
+  const cleaned = value.replace(/[^a-záéíóúàâêôãõç\s\/\-]/gi, '').slice(0, 100);
+  return capitalize(cleaned);
+};
+
+/**
+ * Formata Fonte Pagadora com iniciais maiúsculas, preposições minúsculas, S/A sempre maiúsculo
+ * Exemplo: "empresa xyz s/a" → "Empresa XYZ S/A"
+ */
+export const formatFontePagadora = (value: string): string => {
+  const cleaned = value.replace(/[^a-záéíóúàâêôãõç\s\/\-]/gi, '').slice(0, 100);
+  const capitalized = capitalize(cleaned);
+  
+  // Garantir que S/A seja sempre maiúsculo
+  return capitalized.replace(/s\/a/gi, 'S/A');
+};
+
+/**
+ * Formata Vara com 1-2 algarismos + ª
+ * Exemplo: "1ª vara do trabalho" → "1ª Vara do Trabalho"
+ * Exemplo: "17ª vara do trabalho" → "17ª Vara do Trabalho"
+ */
+export const formatVara = (value: string): string => {
+  // Extrair apenas números e letras
+  const cleaned = value.replace(/[^a-záéíóúàâêôãõç\s0-9]/gi, '');
+  
+  // Extrair números no início
+  const match = cleaned.match(/^(\d{1,2})(.*)/);
+  
+  if (match) {
+    const numero = match[1];
+    const resto = match[2].trim();
+    const capitalized = capitalize(resto);
+    return `${numero}ª ${capitalized}`;
+  }
+  
+  // Se não começar com número, apenas capitalizar
+  return capitalize(cleaned);
+};
+
+/**
+ * Formata Número de Meses: até 3 algarismos (0-999)
+ * Exemplo: "58" → "58"
+ * Exemplo: "120" → "120"
+ */
+export const formatMeses = (value: string): string => {
+  let cleaned = value.replace(/[^0-9,]/g, '');
+  const parts = cleaned.split(',');
+  if (parts.length > 2) {
+    cleaned = parts[0] + ',' + parts.slice(1).join('');
+  }
+  if (!cleaned.includes(',')) {
+    return cleaned.slice(0, 3) + ',0';
+  }
+  const [inteiro, decimal] = cleaned.split(',');
+  const inteiroNum = parseInt(inteiro) || 0;
+  const decimalNum = parseInt((decimal + '0').slice(0, 2));
+  const numeroCompleto = inteiroNum + decimalNum / 100;
+  const arredondado = Math.round(numeroCompleto * 10) / 10;
+  return arredondado.toFixed(1).replace('.', ',');
+};
+
+/**
+ * Valida se o número de meses está correto
+ * Retorna true se é um número entre 0-999
+ */
+export const isMesesValido = (meses: string): boolean => {
+  if (meses.length === 0) return false;
+  const cleaned = meses.replace(',', '.');
+  const num = parseFloat(cleaned);
+  return !isNaN(num) && num >= 0 && num <= 999;
 };

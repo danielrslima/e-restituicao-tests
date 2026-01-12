@@ -16,6 +16,12 @@ import {
   isAnoValido,
   parseValor,
   formatCurrency,
+  formatNome,
+  formatComarca,
+  formatFontePagadora,
+  formatVara,
+  formatMeses,
+  isMesesValido,
 } from "@/lib/formatters";
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";

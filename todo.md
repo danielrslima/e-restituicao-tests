@@ -623,3 +623,16 @@ O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcul
 - [ ] Verificar se Motor retorna resultado correto
 - [ ] Testar com múltiplos alvarás/DARFs/honorários
 - [ ] Validar histórico de cálculos
+
+
+## FASE 9 - Máscaras Avançadas com Regras Específicas (12/01/2026)
+
+- [x] Máscara Nome: Iniciais maiúsculas, preposições minúsculas
+- [x] Máscara Comarca: Iniciais maiúsculas, preposições minúsculas
+- [x] Máscara Fonte Pagadora: Iniciais maiúsculas, preposições minúsculas, S/A sempre maiúsculo
+- [x] Máscara Vara: 1-2 algarismos + ª (Ex: 1ª, 02ª, 17ª), iniciais maiúsculas
+- [x] Máscara Número de Meses: Até 3 algarismos com arredondamento Art. 45 (1 casa decimal)
+- [x] Máscara Valores: Sem zeros à esquerda (326.562,62 e não 00.326.562,62)
+- [x] Máscara Ano: Obrigatoriamente 4 algarismos
+- [ ] Testar máscaras com dados de José Ramos
+- [ ] Validar formatação em tempo real
