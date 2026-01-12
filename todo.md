@@ -256,6 +256,15 @@
 - Dezembro da planilha atual = 1 (base de dezembro/2025)
 
 
+## FASE 5 - Atualização IPCA-e Janeiro/2026 (12/01/2026)
+
+- [x] Atualizar tabela IPCA-e 2026 no Motor V2.0 (73 meses corrigidos)
+- [x] Registrar identificação: IPCA-e_COMPLETO_JAN2026_v1
+- [x] Corrigir todos os 73 meses (Janeiro/2020 - Janeiro/2026)
+- [x] Verificar build compilando corretamente
+- [ ] Testar cálculos com novo IPCA
+- [ ] Validar resultados com dados de teste
+
 ## Correção Site Externo - Tabelas IPCA-E e SELIC (03/01/2026)
 
 ### Análise da Planilha Excel Validada
