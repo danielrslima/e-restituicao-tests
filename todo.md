@@ -560,3 +560,29 @@ O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcul
 ---
 
 **Última Atualização**: 06/01/2026 23:35 (Brasília)
+
+
+## FASE 4 - Refatorar Formulário com Suporte a Múltiplos Alvarás/DARFs/Honorários (11/01/2026)
+
+- [ ] Refatorar estrutura do formulário NovoCalculo.tsx
+- [ ] Implementar suporte a múltiplos alvarás com botão "+Adicionar"
+- [ ] Implementar suporte a múltiplos DARFs com botão "+Adicionar"
+- [ ] Implementar suporte a múltiplos honorários com botão "+Adicionar"
+- [ ] Adicionar lógica de TAB inteligente (adiciona nova linha ao TAB na última linha)
+- [ ] Adicionar lógica de remoção de linhas vazias ao TAB 2x
+- [ ] Adicionar máscaras de entrada (Processo, valores monetários)
+- [ ] Testar formulário com dados de José Ramos
+- [ ] Validar se Motor continua funcionando corretamente
+- [ ] Testar página de Usuários (Admin)
+- [ ] Testar histórico de cálculos
+- [ ] Testar exportação de PDFs
+
+## ✅ VALIDAÇÕES CONCLUÍDAS (11/01/2026 - 23:45)
+
+- [x] Motor V2.0 testado com dados válidos (José Ramos)
+- [x] Resultado correto: R$ 74.933,47 (tabela 2020)
+- [x] Precisão decimal: 2 casas confirmada
+- [x] Arredondamento Art. 45: Funcionando corretamente
+- [x] Autenticação e permissões: 100% funcional
+- [x] Dashboard carregando corretamente
+- [x] Sistema de roles (Admin, User, Viewer): Implementado
