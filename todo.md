@@ -595,3 +595,31 @@ O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcul
 - [x] Autenticação e permissões: 100% funcional
 - [x] Dashboard carregando corretamente
 - [x] Sistema de roles (Admin, User, Viewer): Implementado
+
+
+## FASE 6 - Implementar Máscaras de Entrada Rigorosas (12/01/2026)
+
+- [x] Adicionar máscara para Número do Processo (XXXXXXX-XX.XXXX.X.XX.XXXX)
+- [x] Adicionar máscara para Datas (DD/MM/YYYY com validação rigorosa)
+- [x] Adicionar máscara para Valores Monetários (1.234.567,89 com 2 casas decimais)
+- [x] Adicionar máscara para Ano (YYYY com 4 dígitos)
+- [x] Validar entrada em tempo real (feedback ao usuário)
+- [x] Testar máscaras com dados de José Ramos (CPF formatado corretamente)
+
+## FASE 7 - Refatorar Formulário com Múltiplos Alvarás/DARFs/Honorários (12/01/2026)
+
+- [x] Refatorar seção de Alvarás com "+Adicionar"
+- [x] Refatorar seção de DARFs com "+Adicionar"
+- [x] Refatorar seção de Honorários com "+Adicionar"
+- [x] Implementar lógica de TAB inteligente (adiciona linha ao TAB)
+- [x] Implementar remoção de linhas vazias (TAB 2x)
+- [x] Testar com múltiplos alvarás, DARFs e honorários
+
+## FASE 8 - Testar Fluxo Completo no Navegador (12/01/2026)
+
+- [x] Preencher formulário com dados válidos de José Ramos
+- [x] Validar máscaras funcionando corretamente (CPF formatado)
+- [ ] Submeter formulário
+- [ ] Verificar se Motor retorna resultado correto
+- [ ] Testar com múltiplos alvarás/DARFs/honorários
+- [ ] Validar histórico de cálculos
