@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `can_edit` enum('yes','no') DEFAULT 'no' NOT NULL;
