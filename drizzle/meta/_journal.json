@@ -1,41 +1,5 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1767137066028,
-      "tag": "0000_jittery_clea",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1767137230786,
-      "tag": "0001_uneven_shocker",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1767150284654,
-      "tag": "0002_loving_captain_midlands",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1767161597861,
-      "tag": "0003_true_korvac",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1767328427673,
-      "tag": "0004_common_mentallo",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }

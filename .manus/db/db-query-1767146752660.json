@@ -1,9 +1,0 @@
-{
-  "query": "UPDATE irpf_forms \nSET \n  proporcao = '38.9048%',\n  rendimentos_tributavel_alvara = 98655494,\n  rendimentos_tributavel_honorarios = 27022214,\n  base_calculo = 71633280,\n  rra = '12350.57',\n  ir_mensal = '2511.45',\n  ir_devido = 14566384,\n  irpf_restituir = 7493347\nWHERE nome_cliente LIKE '%JOSE RAMOS%' OR cpf LIKE '%003.003.987%';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute UPDATE irpf_forms \nSET \n  proporcao = '38.9048%',\n  rendimentos_tributavel_alvara = 98655494,\n  rendimentos_tributavel_honorarios = 27022214,\n  base_calculo = 71633280,\n  rra = '12350.57',\n  ir_mensal = '2511.45',\n  ir_devido = 14566384,\n  irpf_restituir = 7493347\nWHERE nome_cliente LIKE '%JOSE RAMOS%' OR cpf LIKE '%003.003.987%';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1494
-}

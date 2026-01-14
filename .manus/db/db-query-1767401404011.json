@@ -1,9 +1,0 @@
-{
-  "query": "UPDATE irpf_forms SET irpf_restituir = 2751536 WHERE id = 30001;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute UPDATE irpf_forms SET irpf_restituir = 2751536 WHERE id = 30001;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 2102
-}

@@ -1,8 +1,0 @@
-{
-  "query": "SELECT \n  id,\n  nome_cliente,\n  cpf,\n  resultado_json,\n  created_at\nFROM irpf_forms \nWHERE cpf = '267.035.801-20'\nORDER BY created_at DESC\nLIMIT 3;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT \n  id,\n  nome_cliente,\n  cpf,\n  resultado_json,\n  created_at\nFROM irpf_forms \nWHERE cpf = '267.035.801-20'\nORDER BY created_at DESC\nLIMIT 3;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'resultado_json' in 'field list'"
-  ]
-}

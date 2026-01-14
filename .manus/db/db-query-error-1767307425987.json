@@ -1,8 +1,0 @@
-{
-  "query": "SELECT nome_cliente, cpf, data_nascimento, email, numero_processo, vara, comarca, fonte_pagadora, cnpj, bruto_homologado, tributavel_homologado, numero_meses, valor_alvara, darf_ir_retido, honorarios, irpf_restituir, resultados_por_exercicio FROM irpf_forms WHERE nome_cliente LIKE '%ANA CARMEN%' LIMIT 1",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 38eD4Jgq6QqQ8RQ.9358cc87900b --database f9FU4FvmnuMB4PWnY4h8mH --execute SELECT nome_cliente, cpf, data_nascimento, email, numero_processo, vara, comarca, fonte_pagadora, cnpj, bruto_homologado, tributavel_homologado, numero_meses, valor_alvara, darf_ir_retido, honorarios, irpf_restituir, resultados_por_exercicio FROM irpf_forms WHERE nome_cliente LIKE '%ANA CARMEN%' LIMIT 1",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'valor_alvara' in 'field list'"
-  ]
-}
