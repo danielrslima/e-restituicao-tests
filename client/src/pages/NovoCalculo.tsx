@@ -93,7 +93,13 @@ export default function NovoCalculo() {
     irpfRestituir: number;
   } | null>(null);
 
-  const tabCountRef = useRef(0);
+  // Refs para navegação TAB entre campos
+  const alvaraValueRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const alvaraDataRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const darfValueRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const darfDataRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const honorarioValueRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const honorarioAnoRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const createMutation = trpc.irpf.create.useMutation({
     onSuccess: (data) => {
@@ -145,44 +151,45 @@ export default function NovoCalculo() {
   };
 
   const handleTabKey = (e: React.KeyboardEvent, type: "alvara" | "darf" | "honorario", id: string, isLastField: boolean) => {
-    if (e.key === "Tab" && !e.shiftKey) {
-      if (isLastField) {
-        e.preventDefault();
-        
-        // Verificar se é a última linha
-        const items = type === "alvara" ? alvaras : type === "darf" ? darfs : honorarios;
-        const isLastRow = items[items.length - 1].id === id;
-        
-        if (isLastRow) {
-          // Adicionar nova linha vazia
-          const newId = Date.now().toString();
-          if (type === "alvara") {
-            setAlvaras(prev => [...prev, { id: newId, valor: "", data: "" }]);
-          } else if (type === "darf") {
-            setDarfs(prev => [...prev, { id: newId, valor: "", data: "" }]);
-          } else {
-            setHonorarios(prev => [...prev, { id: newId, valor: "", ano: new Date().getFullYear().toString() }]);
-          }
-          
-          tabCountRef.current = 0;
+    if (e.key === "Tab" && !e.shiftKey && isLastField) {
+      e.preventDefault();
+      
+      // Obter lista de items e encontrar índice atual
+      const items = type === "alvara" ? alvaras : type === "darf" ? darfs : honorarios;
+      const currentIndex = items.findIndex(item => item.id === id);
+      const isLastRow = currentIndex === items.length - 1;
+      
+      if (isLastRow) {
+        // É a última linha: criar nova linha e focar no Valor dela
+        const newId = Date.now().toString();
+        if (type === "alvara") {
+          setAlvaras(prev => [...prev, { id: newId, valor: "", data: "" }]);
+          // Usar setTimeout para garantir que o novo input foi renderizado
+          setTimeout(() => {
+            alvaraValueRefs.current[newId]?.focus();
+          }, 0);
+        } else if (type === "darf") {
+          setDarfs(prev => [...prev, { id: newId, valor: "", data: "" }]);
+          setTimeout(() => {
+            darfValueRefs.current[newId]?.focus();
+          }, 0);
         } else {
-          tabCountRef.current++;
-          
-          // Se TAB 2x, remover linhas vazias
-          if (tabCountRef.current >= 2) {
-            if (type === "alvara") {
-              setAlvaras(prev => prev.filter(a => a.valor.trim() !== "" || a.data.trim() !== ""));
-            } else if (type === "darf") {
-              setDarfs(prev => prev.filter(d => d.valor.trim() !== "" || d.data.trim() !== ""));
-            } else {
-              setHonorarios(prev => prev.filter(h => h.valor.trim() !== "" || h.ano.trim() !== ""));
-            }
-            tabCountRef.current = 0;
-          }
+          setHonorarios(prev => [...prev, { id: newId, valor: "", ano: new Date().getFullYear().toString() }]);
+          setTimeout(() => {
+            honorarioValueRefs.current[newId]?.focus();
+          }, 0);
+        }
+      } else {
+        // NÃO é a última linha: focar no Valor da próxima linha
+        const nextId = items[currentIndex + 1].id;
+        if (type === "alvara") {
+          alvaraValueRefs.current[nextId]?.focus();
+        } else if (type === "darf") {
+          darfValueRefs.current[nextId]?.focus();
+        } else {
+          honorarioValueRefs.current[nextId]?.focus();
         }
       }
-    } else {
-      tabCountRef.current = 0;
     }
   };
 
@@ -496,15 +503,17 @@ export default function NovoCalculo() {
                   <div className="flex-1 space-y-2">
                     <Label>Valor (R$)</Label>
                     <Input
+                      ref={(el) => { if (el) alvaraValueRefs.current[alvara.id] = el; }}
                       value={alvara.valor}
                       onChange={(e) => handleAlvaraChange(alvara.id, "valor", e.target.value)}
-                      onKeyDown={(e) => handleTabKey(e, "alvara", alvara.id, true)}
+                      onKeyDown={(e) => handleTabKey(e, "alvara", alvara.id, false)}
                       placeholder="0,00"
                     />
                   </div>
                   <div className="flex-1 space-y-2">
                     <Label>Data</Label>
                     <Input
+                      ref={(el) => { if (el) alvaraDataRefs.current[alvara.id] = el; }}
                       value={alvara.data}
                       onChange={(e) => handleAlvaraChange(alvara.id, "data", e.target.value)}
                       onKeyDown={(e) => handleTabKey(e, "alvara", alvara.id, true)}
@@ -551,15 +560,17 @@ export default function NovoCalculo() {
                   <div className="flex-1 space-y-2">
                     <Label>Valor (R$)</Label>
                     <Input
+                      ref={(el) => { if (el) darfValueRefs.current[darf.id] = el; }}
                       value={darf.valor}
                       onChange={(e) => handleDarfChange(darf.id, "valor", e.target.value)}
-                      onKeyDown={(e) => handleTabKey(e, "darf", darf.id, true)}
+                      onKeyDown={(e) => handleTabKey(e, "darf", darf.id, false)}
                       placeholder="0,00"
                     />
                   </div>
                   <div className="flex-1 space-y-2">
                     <Label>Data</Label>
                     <Input
+                      ref={(el) => { if (el) darfDataRefs.current[darf.id] = el; }}
                       value={darf.data}
                       onChange={(e) => handleDarfChange(darf.id, "data", e.target.value)}
                       onKeyDown={(e) => handleTabKey(e, "darf", darf.id, true)}
@@ -606,15 +617,17 @@ export default function NovoCalculo() {
                   <div className="flex-1 space-y-2">
                     <Label>Valor (R$)</Label>
                     <Input
+                      ref={(el) => { if (el) honorarioValueRefs.current[honorario.id] = el; }}
                       value={honorario.valor}
                       onChange={(e) => handleHonorarioChange(honorario.id, "valor", e.target.value)}
-                      onKeyDown={(e) => handleTabKey(e, "honorario", honorario.id, true)}
+                      onKeyDown={(e) => handleTabKey(e, "honorario", honorario.id, false)}
                       placeholder="0,00"
                     />
                   </div>
                   <div className="flex-1 space-y-2">
-                    <Label>Ano</Label>
+                    <Label>Ano Pago</Label>
                     <Input
+                      ref={(el) => { if (el) honorarioAnoRefs.current[honorario.id] = el; }}
                       value={honorario.ano}
                       onChange={(e) => handleHonorarioChange(honorario.id, "ano", e.target.value)}
                       onKeyDown={(e) => handleTabKey(e, "honorario", honorario.id, true)}

@@ -636,3 +636,21 @@ O site calcula valores GLOBAIS (somando todos os exercícios) mas deveria calcul
 - [x] Máscara Ano: Obrigatoriamente 4 algarismos
 - [ ] Testar máscaras com dados de José Ramos
 - [ ] Validar formatação em tempo real
+
+
+## FASE 10 - Integração das Máscaras no Formulário (12/01/2026)
+
+- [ ] Integrar máscaras no formulário (handlers onChange para Nome, Comarca, Fonte Pagadora, Vara, Meses, Valores)
+- [ ] Testar fluxo completo com José Ramos (preencher formulário e validar máscaras em tempo real)
+- [ ] Implementar feedback visual de validação (ícones ✓/✗ para CPF, CNPJ, Processo e Datas)
+
+
+## Correção Lógica TAB Inteligente (13/01/2026)
+
+- [x] **FASE 10 - Corrigir TAB inteligente:** TAB no campo Data/Ano deve ir para Valor da linha seguinte, não adicionar linha automaticamente
+  - [x] Campo Valor: TAB → vai para Data/Ano (sem adicionar linha)
+  - [x] Campo Data/Ano: TAB → vai para Valor da linha seguinte (se existir) ou cria nova linha
+  - [x] Aplicar em todas as seções: Alvarás, DARFs, Honorários
+  - [x] Implementado com refs para navegação entre campos
+  - [x] Testado com múltiplas linhas em Alvarás
+  - [x] Comportamento validado: FUNCIONANDO PERFEITAMENTE ✅
